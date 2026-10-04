@@ -4,7 +4,7 @@
   2. Extensiones > Apps Script > pega este archivo > Guarda > Ejecuta setupUnaVez > Autoriza.
   3. Engrane proyecto > Propiedades de secuencia de comandos > agrega API_KEY con una clave larga.
   4. Implementar > Nueva implementacion > Aplicacion web > Ejecutar como: Yo, Acceso: Cualquiera > Copia la URL /exec.
-  5. Pega URL + API_KEY en la pestana Centro > Backend Sheets de la app.
+  5. Enrolá cada equipo con el QR (Carga → Enrolar vecino): la URL + API_KEY nunca van en el código, viven solo en el localStorage de cada equipo. Fallback: ⚙ Conexión del ingreso o Centro → Conexión.
   Hojas exactas: "BD Vecino" | "BD Postes" | "Usuarios de app" | "Auditoria"
 */
 var HOJAS = {
@@ -13,7 +13,8 @@ var HOJAS = {
   usuarios: "Usuarios de app",
   auditoria: "Auditoria",
   sesiones: "Sesiones",
-  incidentes: "Incidentes"
+  incidentes: "Incidentes",
+  alarmas: "Alarmas"
 };
 var HEADERS = {};
 HEADERS[HOJAS.vecino] = ["id","nombre","direccion","telefono","poste_id","lat","lng","activo","fecha_registro","notas"];
@@ -22,6 +23,7 @@ HEADERS[HOJAS.usuarios] = ["username","rol","vecino_id","activo","creado","nota"
 HEADERS[HOJAS.auditoria] = ["timestamp","tipo_evento","actor","detalle","id_ref","extra"];
 HEADERS[HOJAS.sesiones] = ["token","username","rol","vecino_id","poste_id","expira","creado"];
 HEADERS[HOJAS.incidentes] = ["id_alarma","tipo","subtipo","condicion","sintesis","cierre","operador","actualizado"];
+HEADERS[HOJAS.alarmas] = ["id_alarma","kind","user","addr","tel","lat","lng","vid","pid","sim","ts","estado","actualizado"];
 
 function setupUnaVez() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -143,6 +145,7 @@ function doGet(e) {
       var d = _rows(HOJAS.auditoria);
       return _ok({ok:true, data:d.slice(-lim).reverse()});
     }
+    if (a === "alarmas") { var dd = _rows(HOJAS.alarmas); return _ok({ok:true, data:dd.slice(-100)}); }
     return _ok({ok:false, error:"bad_action"});
   } catch(err) { return _ok({ok:false, error:String(err)}); }
 }
@@ -321,6 +324,30 @@ function doPost(e) {
       if (cond !== "TENTATIVA" && cond !== "CONSUMADO") cond = "";
       return _ok(_mergeUpsert(HOJAS.incidentes, "id_alarma", String(b.id_alarma), {tipo:String(b.tipo||""), subtipo:String(b.subtipo||""), condicion:cond, sintesis:String(b.sintesis||""), cierre:String(b.cierre||""), operador:__chkN.actor.username, actualizado:new Date().toISOString()},
         {id_alarma:String(b.id_alarma), tipo:"", subtipo:"", condicion:"", sintesis:"", cierre:"", operador:__chkN.actor.username, actualizado:new Date().toISOString()}));
+    }
+    if (a === "alarma") {
+      var __chkA = _reqActor(b);
+      if (__chkA.error) return _ok({ok:false, error:__chkA.error});
+      if (!b.id_alarma) return _ok({ok:false, error:"sin_id"});
+      return _ok(_mergeUpsert(HOJAS.alarmas, "id_alarma", String(b.id_alarma), {kind:String(b.kind||""), user:String(b.user||""), addr:String(b.addr||""), tel:String(b.tel||""), lat:String(b.lat||""), lng:String(b.lng||""), vid:String(b.vid||""), pid:String(b.pid||""), sim:String(b.sim?1:0), ts:String(b.ts||Date.now()), estado:"activa", actualizado:new Date().toISOString()},
+        {id_alarma:String(b.id_alarma), kind:"", user:"", addr:"", tel:"", lat:"", lng:"", vid:"", pid:"", sim:"0", ts:String(Date.now()), estado:"activa", actualizado:new Date().toISOString()}));
+    }
+    if (a === "estadoAlarma") {
+      var __chkS = _reqActor(b);
+      if (__chkS.error) return _ok({ok:false, error:__chkS.error});
+      var rolS = String(__chkS.actor.rol || "").toLowerCase();
+      if (!b.id_alarma) return _ok({ok:false, error:"sin_id"});
+      var estS = String(b.estado || "");
+      if (estS !== "atendida" && estS !== "retirada") return _ok({ok:false, error:"estado_invalido"});
+      if (rolS !== "admin" && rolS !== "centro") {
+        if (rolS !== "vecino" || estS !== "retirada") return _ok({ok:false, error:"sin_permiso"});
+        var ah = _sheet(HOJAS.alarmas), ahead = ah.getRange(1,1,1,ah.getLastColumn()).getValues()[0].map(String);
+        var ai = ahead.indexOf("id_alarma"), alr = ah.getLastRow(), own = false;
+        if (ai >= 0 && alr >= 2) { var acol = ah.getRange(2, ai+1, alr-1, 1).getValues(); for (var aq=0;aq<acol.length;aq++) if (String(acol[aq][0])===String(b.id_alarma)) { var vrow = ah.getRange(aq+2,1,1,ahead.length).getValues()[0]; var vi2 = ahead.indexOf("vid"); own = vi2>=0 && String(vrow[vi2])!=="" && String(vrow[vi2])===String(__chkS.actor.vecino_id||""); break; } }
+        if (!own) return _ok({ok:false, error:"sin_permiso"});
+      }
+      return _ok(_mergeUpsert(HOJAS.alarmas, "id_alarma", String(b.id_alarma), {estado:estS, actualizado:new Date().toISOString()},
+        {id_alarma:String(b.id_alarma), kind:"", user:"", addr:"", tel:"", lat:"", lng:"", vid:"", pid:"", sim:"0", ts:String(Date.now()), estado:estS, actualizado:new Date().toISOString()}));
     }
     if (a === "evento") {
       var __chkE = _reqActor(b);

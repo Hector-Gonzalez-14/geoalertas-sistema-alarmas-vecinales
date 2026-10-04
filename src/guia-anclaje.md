@@ -224,8 +224,8 @@ El punto le avisa al backend "sigo vivo" cada 60 seg. Si el Centro/Admin no reci
 // ===== CONFIG DEL PUNTO (cambiar estos 5) =====
 const char* WIFI_SSID   = "WIFI_DEL_BARRIO";
 const char* WIFI_PASS   = "CLAVE_WIFI";
-const char* BACKEND_URL = "https://script.google.com/macros/s/AKfycbzYeHRm4bg4Xi4U38oQ7hotFvha66hfb9JKKzVMiRXYl-9lJQh-yn3P53ihNXrWnVCcLA/exec"; // URL /exec (si cambia el despliegue, actualizar en TODOS los puntos)
-const char* API_KEY     = "ca3993b5-b822-4d0c-b441-6fa217c3831d90db182c-099e-42be-aabe-8fc6ce8e33f8"; // Engrane proyecto > Propiedades
+const char* BACKEND_URL = "PEGAR_AQUI_URL_EXEC"; // URL /exec (si cambia el despliegue, actualizar en TODOS los puntos)
+const char* API_KEY     = "PEGAR_AQUI_API_KEY";     // Engrane proyecto > Propiedades (nunca subir la real a docs públicos)
 const char* ID_PUNTO    = "punto-mz12";   // CAMBIAR por punto: = id_poste cargado en Carga
 const char* FW          = "2.0-latido";
 // ==============================================
