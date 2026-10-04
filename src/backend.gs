@@ -281,6 +281,9 @@ function doPost(e) {
     }
     if (a === "login") {
       var lun = String(b.username || "").trim().toLowerCase();
+      var lck = CacheService.getScriptCache();
+      var lnn = parseInt(lck.get("li_" + lun) || "0", 10);
+      if (lnn >= 15) return _ok({ok:false, error:"bloqueado"});
       var uh = _sheet(HOJAS.usuarios);
       var uhead = uh.getRange(1, 1, 1, uh.getLastColumn()).getValues()[0].map(String);
       function ug(nm) { var ii = uhead.indexOf(nm); return ii >= 0 ? ii : -1; }
@@ -302,7 +305,8 @@ function doPost(e) {
         if (cii >= 0) uh.getRange(frow, cii + 1).setValue(prueba);
         okL = true;
       }
-      if (!okL) return _ok({ok:false, error:"clave"});
+      if (!okL) { try { lck.put("li_" + lun, String(lnn + 1), 600); } catch(_){} return _ok({ok:false, error:"clave"}); }
+      try { lck.remove("li_" + lun); } catch(_){}
       var rolR = String(gv("rol") || "vecino"), vidR = String(gv("vecino_id") || ""), pidR = String(gv("poste_id") || "");
       var tok = _nuevaSesion({username:lun, rol:rolR, vecino_id:vidR, poste_id:pidR});
       return _ok({ok:true, user:{username:lun, rol:rolR, vecino_id:vidR, poste_id:pidR, activo:String(aii >= 0 ? lrow[aii] : "SI")}, token:tok});
