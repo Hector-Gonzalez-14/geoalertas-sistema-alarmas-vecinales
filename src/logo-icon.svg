@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- Ícono GeoAlerta (versión oscura, para fondos claros) -->
+  <g transform="translate(60, 60) rotate(35) translate(-45, -45)">
+    <path d="M 15 75 A 60 60 0 0 1 75 15" fill="none" stroke="#0f172a" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 40 75 A 35 35 0 0 1 75 40" fill="none" stroke="#38bdf8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 65 75 A 10 10 0 0 1 75 65" fill="none" stroke="#ef4444" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>

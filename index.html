@@ -1,0 +1,559 @@
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+html{color-scheme:light dark}
+*{box-sizing:border-box;font-family:system-ui,Roboto,Arial,sans-serif}
+body{margin:0;text-align:left;background:#081120;color:#eef4ff}
+header{position:sticky;top:0;z-index:20;background:#0d1b33;border-bottom:1px solid #24395e;padding:8px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+header b{font-size:15px}
+.brand b{font-family:Montserrat,Inter,system-ui,sans-serif;display:block;font-size:17px;letter-spacing:-.5px;color:#eef4ff}
+.brand b .l{font-weight:600}
+.brand>span{font-size:11px;color:#9fb0cc;letter-spacing:1.5px}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{border:1px solid #24395e;background:#13233f;color:#eef4ff;border-radius:20px;padding:7px 12px;font-size:13px;cursor:pointer}
+nav button.on{background:#e82836;border-color:#e82836;font-weight:700}
+main{max-width:980px;margin:0 auto;padding:12px 12px 80px}
+.card{background:#13233f;border:1px solid #24395e;border-radius:14px;padding:14px;margin:10px 0}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer}
+.btn-red{background:#e82836;color:#fff;width:100%}
+button.btn.btn-green{background:#2ed573;color:#081120}
+.btn-ghost{background:#24395e;color:#fff}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #24395e;background:#081120;color:#fff;margin:4px 0}
+label{font-size:12px;color:#9fb0cc}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+.map{height:260px;border-radius:12px;background:#0d1b33;z-index:1;overflow:hidden;max-width:100%}
+.bar{height:14px;border-radius:7px;background:#24395e;margin:4px 0}.bar>i{display:block;height:100%;border-radius:7px;background:#2ed573}
+#panicBtn{width:min(280px,80vw);height:min(280px,80vw);border-radius:50%;border:8px solid #7f1d1d;background:radial-gradient(circle at 35% 30%,#ff4757,#991b1b);color:#fff;font-size:34px;font-weight:900;cursor:pointer;box-shadow:0 0 40px #e8283655;margin:12px auto;display:block;touch-action:manipulation;position:relative;isolation:isolate}
+#panicBtn::before,#panicBtn::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:5px solid #ff4757;animation:ripple 2s ease-out infinite;pointer-events:none;z-index:-1}
+#panicBtn::after{animation-delay:1s}
+@keyframes ripple{from{transform:scale(1);opacity:.9}to{transform:scale(1.55);opacity:0}}
+#panicBtn:active{transform:scale(.96)}
+.sos-screen{background:linear-gradient(180deg,#0b1226,#0d1b33 70%);text-align:center;border-radius:22px;padding:22px 14px;overflow:hidden}
+.sos-head b{letter-spacing:3px;font-size:15px}
+.sos-head small{color:#9fb0cc}
+#cdNums{display:flex;flex-direction:column;line-height:1.15;margin:6px 0 10px;font-size:32px;font-weight:900}
+#cdNums span{color:#24395e}
+#cdNums span.lit{color:#ff4757;text-shadow:0 0 14px #ff4757}
+.sos-foot{margin-top:12px;color:#9fb0cc;font-size:12px}
+#typeBar{position:sticky;top:56px;z-index:15;background:#0d1b33;color:#eef4ff;border-radius:12px;padding:8px;margin:8px 0;border:2px solid #38c6ff}
+#typeBar .row>*{min-width:100px}
+.tchip.sel{outline:3px solid #fff;box-shadow:0 0 12px #38c6ff}
+#sosBubble{position:fixed;right:12px;bottom:76px;z-index:95;background:#0d1b33;border:2px solid #e82836;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;box-shadow:0 4px 24px #000;max-width:220px}
+#sosBubble[hidden]{display:none}
+.alarm{border-left:6px solid #ff4757;background:#0d1b33;border-radius:10px;padding:10px;margin:8px 0;border:1px solid #24395e}
+.alarm.med{border-color:#ffa502}.alarm.pol{border-color:#3b82f6}.alarm.dis{border-color:#a855f7}
+.alarm.ok{opacity:.6;border-left-color:#2ed573}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#555}.dot.on{background:#2ed573;box-shadow:0 0 8px #2ed573}
+.siren{height:120px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;background:#111}
+.siren.go{animation:flash .5s infinite alternate}
+@keyframes flash{from{background:#e82836}to{background:#2563eb}}
+small{color:#9fb0cc}
+ul{padding-left:18px;margin:6px 0}
+.kbd{background:#0d1b33;border:1px solid #24395e;border-radius:6px;padding:1px 6px;font-size:12px}
+footer{text-align:center;padding:18px 12px 26px;color:#9fb0cc;font-size:12px}
+#alertFlash{position:fixed;inset:0;background:#ff0000;opacity:0;pointer-events:none;z-index:80}
+#alertFlash.on{animation:aflash .7s infinite}
+@keyframes aflash{0%,100%{opacity:0}50%{opacity:.3}}
+#toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#0d1b33;border:1px solid #24395e;padding:10px 16px;border-radius:12px;display:none;z-index:99}
+#loginEl{position:fixed;inset:0;background:#0d1b33f2;z-index:50;overflow:auto;padding:12px}#loginEl.hide{display:none}
+.mapBig{height:58vh;min-height:340px}
+.alarm.attn{animation:attn 1s infinite alternate;border-left-width:10px}
+@keyframes attn{from{box-shadow:0 0 0 #ff475700}to{box-shadow:0 0 18px #ff4757}}
+#busy{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#0d1b33;border:1px solid #38c6ff;color:#fff;padding:8px 16px;border-radius:20px;display:none;z-index:200;font-size:13px;font-weight:700;box-shadow:0 0 16px #38c6ff55}
+#busy.show{display:block}
+.spin{display:inline-block;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.btn.busy{opacity:.55;pointer-events:none}
+.btn:disabled{opacity:.55}
+table.ut{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+table.ut th,table.ut td{border:1px solid #24395e;padding:6px;text-align:left;vertical-align:middle}
+table.ut th{background:#0d1b33;color:#9fb0cc;font-size:11px}
+table.ut .btn{padding:6px 10px;font-size:12px}
+@media(min-width:800px){.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+</style>
+<header>
+<svg viewBox="0 0 120 120" width="40" height="40" aria-label="GeoAlerta icono"><g transform="translate(60,60) rotate(35) translate(-45,-45)"><path d="M 15 75 A 60 60 0 0 1 75 15" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/><path d="M 40 75 A 35 35 0 0 1 75 40" fill="none" stroke="#38c6ff" stroke-width="14" stroke-linecap="round"/><path d="M 65 75 A 10 10 0 0 1 75 65" fill="none" stroke="#ff4757" stroke-width="12" stroke-linecap="round"/></g></svg>
+<div class="brand"><b>GeoAlerta <span class="l">Sistemas</span></b><span>CATAMARCA · PUNTO DE ALARMA VECINAL</span></div><span id="connEl"><span class="dot"></span> <small>conectando…</small></span>
+<nav>
+<button data-v="vecino" class="on" id="tab-vecinoBtn">📱 Vecino</button>
+<button data-v="carga" id="tab-cargaBtn">📝 Carga</button>
+<button data-v="centro" id="tab-centroBtn">🖥️ Centro</button>
+<button data-v="poste" id="tab-posteBtn">🔊 Punto de alarma</button>
+<button data-v="vis" id="tab-visBtn">👁 Vista</button>
+<button data-v="guia" id="tab-guiaBtn">🛠️ Armar sirena</button>
+</nav>
+<button class="btn btn-ghost" id="logoutBtn" hidden>⏻ Salir (<span id="userNameEl"></span>)</button>
+</header>
+<div id="loginEl">
+<div class="card" style="max-width:420px;margin:40px auto;text-align:center">
+<svg viewBox="0 0 120 120" width="54" height="54" aria-label="GeoAlerta icono"><g transform="translate(60,60) rotate(35) translate(-45,-45)"><path d="M 15 75 A 60 60 0 0 1 75 15" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/><path d="M 40 75 A 35 35 0 0 1 75 40" fill="none" stroke="#38c6ff" stroke-width="14" stroke-linecap="round"/><path d="M 65 75 A 10 10 0 0 1 75 65" fill="none" stroke="#ff4757" stroke-width="12" stroke-linecap="round"/></g></svg><div class="brand"><b>GeoAlerta <span class="l">Sistemas</span></b><span>CATAMARCA · PUNTO DE ALARMA VECINAL</span></div>
+<div style="text-align:left"><b>🔐 Ingreso</b><br>
+<small>Usá tu usuario y clave.</small>
+<div><label>Usuario</label><input id="loginUserInput" placeholder="ej: admin"></div>
+<div><label>Clave</label><div class="row"><div><input id="loginPassInput" type="password" placeholder="••••"></div><button class="btn btn-ghost" id="eyeBtn" style="flex:0 0 52px">👁</button></div></div>
+<div class="row" style="margin-top:8px">
+<button class="btn btn-green" id="loginBtn">Entrar</button>
+</div>
+<div id="loginMsgEl" style="margin-top:8px"><small></small></div>
+<details id="lgConnDet" style="margin-top:8px" hidden><summary><small>⚙ Cambiar conexión (si dice Sin conexión)</small></summary>
+<div><label>URL /exec</label><input id="lgUrlInput" placeholder="https://script.google.com/macros/s/.../exec"></div>
+<div><label>API_KEY</label><input id="lgKeyInput" placeholder="API_KEY"></div>
+<button class="btn btn-ghost" id="lgSaveBtn" style="margin-top:6px">💾 Guardar conexión</button>
+</details>
+</div>
+</div>
+<div style="text-align:center;padding:6px 12px 20px;color:#9fb0cc;font-size:12px">Power By: <svg viewBox="0 0 120 120" width="18" height="18" style="vertical-align:middle" aria-label="GeoAlerta icono"><g transform="translate(60,60) rotate(35) translate(-45,-45)"><path d="M 15 75 A 60 60 0 0 1 75 15" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/><path d="M 40 75 A 35 35 0 0 1 75 40" fill="none" stroke="#38c6ff" stroke-width="14" stroke-linecap="round"/><path d="M 65 75 A 10 10 0 0 1 75 65" fill="none" stroke="#ff4757" stroke-width="12" stroke-linecap="round"/></g></svg> <b style="font-family:Montserrat,sans-serif">GeoAlerta Sistemas</b></div>
+</div>
+<main>
+<div id="typeBar">
+<b>👆 Tipo de alarma (tocá para elegir, queda guardado):</b>
+<div class="row" style="margin-top:6px">
+<button class="btn tchip" style="background:#a855f7;color:#081120" data-t="disuadir">🔊 Disuadir</button>
+<button class="btn tchip" style="background:#ffa502;color:#081120" data-t="medica">🚑 Médica</button>
+<button class="btn tchip" style="background:#2563eb;color:#fff" data-t="policia">🚔 Policía</button>
+</div>
+</div>
+<div id="sosBubble" hidden>
+<b style="font-size:13px">🚨 Alarma enviada</b>
+<a href="tel:911" class="btn btn-green" style="text-decoration:none;text-align:center">📞 Llamar 911</a>
+<button class="btn btn-green" id="bubbleWaBtn">💬 WhatsApp</button>
+<button class="btn btn-ghost" id="bubbleRetBtn">↩️ Fue un error</button>
+<button class="btn btn-ghost" id="bubbleXBtn">✕ Cerrar</button>
+</div>
+
+<section id="v-vecino">
+<div class="card" id="installCard" hidden>📲 <b>Instalá la app en tu celular</b><br><small id="installTxt"></small><div class="row" style="margin-top:8px"><button class="btn btn-green" id="installOkBtn">Entendido</button></div></div>
+<div class="card">
+<b>👤 Quién activa</b>
+<div class="row"><div><label>Nombre</label><input id="nameInput" placeholder="Ej: María Gómez"></div>
+<div><label>Dirección / Manzana / Lote</label><input id="addrInput" placeholder="Ej: Mz 12 Lt 4, Calle Los Pinos"></div></div>
+<div class="row"><div><label>Teléfono</label><input id="telInput" placeholder="Ej: 555-1234"></div>
+<div><label>Llamar al 911 al activar</label><select id="call911Sel"><option value="si" selected>Sí, abrir teléfono en 911</option><option value="no">No llamar</option></select></div></div>
+<button class="btn btn-ghost" id="addVecinoBtn">＋ Guardar / agregar vecino</button>
+<div id="vecinosEl" style="margin-top:8px"></div>
+<small>Se guarda en este equipo. En el Centro se ve quién disparó la alarma.</small>
+</div>
+<div class="card sos-screen">
+<div class="sos-head"><svg viewBox="0 0 120 120" style="width:54px;height:54px" role="img" aria-label="GeoAlerta"><g transform="translate(60,60) rotate(35) translate(-45,-45)"><path d="M 15 75 A 60 60 0 0 1 75 15" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/><path d="M 40 75 A 35 35 0 0 1 75 40" fill="none" stroke="#38c6ff" stroke-width="14" stroke-linecap="round"/><path d="M 65 75 A 10 10 0 0 1 75 65" fill="none" stroke="#ff4757" stroke-width="12" stroke-linecap="round"/></g></svg><br><b>ALARMA VECINAL</b><br><small>Juntos nos cuidamos</small></div>
+<button id="panicBtn">SOS</button>
+<div id="cdNums"><span data-n="3">3</span><span data-n="2">2</span><span data-n="1">1</span></div>
+<button class="btn btn-ghost" id="sosCancelBtn">🚫 Cancelar</button>
+<details style="margin-top:10px;text-align:left"><summary><small>⚙️ Opciones (modo, 911, WhatsApp)</small></summary>
+<small>Al confirmar se avisa al Centro, suena la sirena del punto de alarma y se abre el teléfono en <span class="kbd">911</span>.</small>
+<div class="row"><div><label>Modo</label><select id="simSel"><option value="no">Real</option><option value="si">Simulacro (práctica)</option></select></div>
+<div><label>WhatsApp grupo (solo números)</label><input id="waNumInput" placeholder="5493834000000"></div></div>
+<div style="margin-top:8px"><a id="tel911" href="tel:911" class="btn btn-green" style="display:inline-block;text-decoration:none">📞 Llamar 911 ahora</a> <button class="btn btn-green" id="waBtn">💬 WhatsApp</button></div>
+</details>
+<div id="myAlarmsEl"></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" id="clearHistBtn">🧹 Borrar mi historial de este equipo</button></div>
+<div class="sos-foot">Power By: <svg viewBox="0 0 120 120" width="18" height="18" style="vertical-align:middle" aria-label="GeoAlerta icono"><g transform="translate(60,60) rotate(35) translate(-45,-45)"><path d="M 15 75 A 60 60 0 0 1 75 15" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/><path d="M 40 75 A 35 35 0 0 1 75 40" fill="none" stroke="#38c6ff" stroke-width="14" stroke-linecap="round"/><path d="M 65 75 A 10 10 0 0 1 75 65" fill="none" stroke="#ff4757" stroke-width="12" stroke-linecap="round"/></g></svg> <b style="font-family:Montserrat,sans-serif">GeoAlerta Sistemas</b></div>
+</div>
+<div class="card"><b>📍 Mi ubicación</b><br>
+<small>Tocá el mapa o usá el GPS. Se envía con cada alarma y la ve el Centro.</small>
+<div class="row"><div><label>Latitud</label><input id="myLatInput" placeholder="-28.4696"></div>
+<div><label>Longitud</label><input id="myLngInput" placeholder="-65.7795"></div></div>
+<div id="myMapEl" class="map" style="margin-top:8px"></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" id="myGpsBtn">🛰 Usar mi GPS</button><button class="btn btn-green" id="mySaveBtn">💾 Guardar ubicación</button></div>
+<div id="myPosteEl" style="margin-top:8px"><small></small></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" id="myPosteBtn">🔊 Ver mi punto de alarma en el mapa</button></div>
+</div>
+</section>
+
+<section id="v-carga" hidden>
+<div class="card" id="usersCard"><b>👥 Usuarios</b><br>
+<small>Carga solo ve usuarios vecino y carga. La clave nunca se muestra: usá 🔑 Reiniciar clave y pasale la nueva al vecino en el momento.</small>
+<div class="row"><div><label>Usuario</label><input id="nuUserInput" placeholder="ej: maria"></div>
+<div><label>Clave</label><div class="row"><div><input id="nuPassInput" type="password" placeholder="clave"></div><button class="btn btn-ghost" id="eyeBtn2" style="flex:0 0 52px">👁</button></div></div></div>
+<div class="row"><div><label>Rol</label><select id="nuRolSel"><option value="vecino">vecino</option><option value="carga">carga</option></select></div>
+<div><label>ID vecino (opcional)</label><input id="nuVecInput" placeholder="id de BD Vecino"></div></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-green" id="nuCreateBtn">Crear / actualizar</button><button class="btn btn-ghost" id="nuListBtn">Listar</button></div>
+<div id="usersEl" style="margin-top:8px"></div>
+</div>
+<div class="card"><b>🏠 Vecinos</b> <span id="cvCountEl"></span><br>
+<small>Relacioná cada vecino con su punto de alarma y cargá sus coordenadas.</small>
+<div id="cvListEl" style="margin-top:8px"></div>
+<div class="row"><div><label>Nombre</label><input id="cvNameInput"></div>
+<div><label>Dirección</label><input id="cvAddrInput"></div></div>
+<div class="row"><div><label>Teléfono</label><input id="cvTelInput"></div>
+<div><label>Punto de alarma</label><select id="cvPosteSel"><option value="">Sin punto de alarma</option></select></div></div>
+<div class="row"><div><label>Latitud</label><input id="cvLatInput"></div>
+<div><label>Longitud</label><input id="cvLngInput"></div>
+<div><label>Activo</label><select id="cvActiveSel"><option value="SI">SI</option><option value="NO">NO (baja)</option></select></div></div>
+<div id="cvMapEl" class="map" style="margin-top:8px"></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-green" id="cvSaveBtn">💾 Guardar vecino</button><button class="btn btn-ghost" id="cvGpsBtn">🛰 GPS</button><button class="btn btn-ghost" id="cvClearBtn">Nuevo</button></div>
+</div>
+<div class="card"><b>🔊 Puntos de alarma</b> <span id="cpCountEl"></span><br>
+<small>Cargá la ubicación exacta de cada punto de alarma y su URL.</small>
+<div id="cpListEl" style="margin-top:8px"></div>
+<div class="row"><div><label>Nombre</label><input id="cpNameInput" placeholder="Ej: Punto Mz 12"></div>
+<div><label>Dirección</label><input id="cpAddrInput"></div></div>
+<div class="row"><div><label>URL ESP32</label><input id="cpEspInput" placeholder="http://IP/sirena"></div>
+<div><label>Estado</label><select id="cpStateSel"><option value="activo">activo</option><option value="en_revision">en revisión</option><option value="inactivo">inactivo</option></select></div></div>
+<div class="row"><div><label>Latitud</label><input id="cpLatInput"></div>
+<div><label>Longitud</label><input id="cpLngInput"></div></div>
+<div id="cpMapEl" class="map" style="margin-top:8px"></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-green" id="cpSaveBtn">💾 Guardar punto de alarma</button><button class="btn btn-ghost" id="cpGpsBtn">🛰 GPS</button><button class="btn btn-ghost" id="cpClearBtn">Nuevo</button></div>
+</div>
+</section>
+
+<section id="v-centro" hidden>
+<div class="card"><b>🗺️ Monitoreo <span id="centroCountEl"></span></b> <label style="font-size:12px"><input type="checkbox" id="jurTgl" checked style="width:auto"> Jurisdicciones</label>
+<div id="monMapEl" class="map mapBig" style="margin-top:8px"></div>
+<div class="row" style="margin-top:8px">
+<button class="btn btn-ghost" id="soundBtn">🔔 Sonido: ON</button>
+<button class="btn btn-ghost" id="clearBtn">Limpiar atendidas</button>
+</div></div>
+<div class="card"><b>🏥 Salud de puntos <span id="saludCountEl"></span></b><br>
+<small>Cada punto avisa que sigue vivo cada 60 seg (latido). Sin aviso tras el umbral se marca 🔴 caído y suena alerta en Centro/Admin.</small>
+<div id="saludEl" style="margin-top:8px"><small>Sin datos.</small></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" id="saludBtn">🔄 Actualizar</button></div>
+</div>
+<div id="alarmsEl"></div>
+<div class="card"><b>📜 Historial global</b><br><small>Últimos eventos registrados en el sistema.</small>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" id="globBtn">⬇ Cargar historial</button></div>
+<div id="globHistEl" style="margin-top:8px"><small>Sin cargar.</small></div>
+</div>
+<div class="card" id="backendCard"><b>🗄️ Conexión del sistema</b><br>
+<small>Dirección del servidor + clave. Se guarda solo en este equipo.</small>
+<div><label>URL /exec</label><input id="backendUrlInput" placeholder="https://script.google.com/macros/s/.../exec"></div>
+<div><label>API_KEY</label><input id="backendKeyInput" placeholder="API_KEY"></div>
+<div><label>Umbral punto caído (minutos sin latido)</label><input id="umbralInput" placeholder="5"></div>
+<div class="row" style="margin-top:8px">
+<button class="btn btn-ghost" id="backendSaveBtn">💾 Guardar</button>
+<button class="btn btn-ghost" id="backendTestBtn">Probar</button>
+<button class="btn btn-ghost" id="backendPullBtn">⬇ Cargar vecinos</button>
+<button class="btn btn-ghost" id="revokeBtn">🔌 Cerrar todas las sesiones</button>
+</div>
+<div id="backendStatusEl" style="margin-top:8px"><small>Sin configurar.</small></div>
+</div>
+</section>
+
+<section id="v-poste" hidden>
+<div class="card"><b>🔊 Punto de alarma</b><br>
+<small>Elegí el punto de alarma, ajustá sus coordenadas y controlá la sirena.</small>
+<div><label>Punto de alarma</label><select id="posteSel"><option value="">Sin puntos de alarma</option></select></div>
+<div class="row"><div><label>Latitud</label><input id="posteLatInput"></div>
+<div><label>Longitud</label><input id="posteLngInput"></div></div>
+<div id="posteMapEl" class="map" style="margin-top:8px"></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" id="posteGpsBtn">🛰 GPS</button><button class="btn btn-green" id="posteSaveBtn">💾 Guardar coordenadas</button></div>
+</div>
+<div class="card"><b>🔊 Dispositivo sonoro del punto de alarma (simulador + control real)</b><br>
+<small>Dejá esta pestaña abierta en una tablet/PC conectada al parlante, o configurá la URL real de tu ESP32.</small>
+<div class="siren" id="sirenEl">APAGADA</div>
+<div class="row" style="margin-top:8px">
+<button class="btn btn-red" id="sirenOnBtn">Encender luces + sirena</button>
+<button class="btn btn-ghost" id="sirenOffBtn">Apagar</button>
+<button class="btn btn-ghost" id="fsBtn">⛶ Pantalla completa</button>
+</div>
+<label>URL del dispositivo real (opcional, ej: http://192.168.1.50/sirena?on=1 )</label>
+<input id="espUrlInput" placeholder="http://IP/sirena">
+<small>Si la completás, cada orden también se envía por HTTP a tu placa.</small>
+<div id="posteLogEl" style="margin-top:8px"><small>Esperando órdenes…</small></div>
+</div></section>
+
+<section id="v-vis" hidden>
+<div class="card"><b>👁 Visualización</b><br><small>Solo lectura: alarmas activas y estadísticas del sistema.</small>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" id="statsBtn">📊 Actualizar estadísticas</button></div>
+</div>
+<div class="card"><b>📊 Estadísticas</b><div id="statsEl"><small>Sin datos.</small></div></div>
+<div class="card"><b>🗺️ Mapa (solo lectura)</b> <label style="font-size:12px"><input type="checkbox" id="jurTgl2" checked style="width:auto"> Jurisdicciones</label><div id="visMapEl" class="map" style="margin-top:8px"></div></div>
+<div class="card"><b>🚨 Alarmas en vivo</b><div id="visAlarmsEl"><small>Sin alarmas.</small></div></div>
+</section>
+
+<section id="v-guia" hidden>
+<div class="card"><b>🛠️ Qué necesitás para armar la sirena del punto de alarma</b>
+<ul>
+<li><b>Opción fácil (recomendada):</b> ESP32 + relé 2 canales + sirena 12V 30W + reflector LED 220V/12V + fuente 12V 5A + caja estanca IP65 + chip con WiFi del barrio.</li>
+<li><b>Opción sin WiFi:</b> misma sirena + módulo GSM SIM800L con chip SMS: la alarma le manda SMS y suena igual.</li>
+<li><b>Costos aprox 2026:</b> ESP32 u$s8, relé u$s5, sirena 12V u$s25, LED u$s15, fuente u$s15, caja+cables u$s20.</li>
+<li><b>Montaje:</b> caja a 3-4m en la columna, sirena hacia abajo, LED visible 360°. Alimentación con 220V del alumbrado + batería 12V 7Ah de respaldo.</li>
+<li><b>Cómo se vincula:</b> la placa expone <span class="kbd">/sirena?on=1&amp;modo=disuadir</span>. Poné su IP en la pestaña Punto de alarma y esta app la acciona sola. Alternativa sin programar: enchufe WiFi Tuya + rutina Alexa.</li>
+</ul>
+<b>Lista de compras</b>
+<ul>
+<li>1× ESP32 DevKit V1</li><li>1× Relé 2ch 10A</li><li>1× Sirena exterior 12V</li><li>1-2× Reflector LED 12V o 220V</li><li>1× Fuente 12V 5A + batería 12V 7Ah (opcional pero recomendada)</li><li>1× Caja estanca, cable, térmicas, tornillería</li>
+</ul>
+<small>Código de ejemplo para ESP32 (Arduino): WiFi + webserver con /sirena que activa D25 (sirena) y D26 (luz) 60 seg. Pedime y te lo genero listo para pegar.</small>
+</div></section>
+</main>
+<footer><svg viewBox="0 0 120 120" width="30" height="30" style="vertical-align:middle" aria-label="GeoAlerta icono"><g transform="translate(60,60) rotate(35) translate(-45,-45)"><path d="M 15 75 A 60 60 0 0 1 75 15" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/><path d="M 40 75 A 35 35 0 0 1 75 40" fill="none" stroke="#38c6ff" stroke-width="14" stroke-linecap="round"/><path d="M 65 75 A 10 10 0 0 1 75 65" fill="none" stroke="#ff4757" stroke-width="12" stroke-linecap="round"/></g></svg> <b style="font-family:Montserrat,sans-serif">GeoAlerta Sistemas</b> · Alarma Vecinal · Catamarca</footer>
+<div id="alertFlash"></div>
+<div id="toast"></div>
+<div id="busy"><span class="spin">⏳</span> <span id="busyTxt">Trabajando…</span></div>
+<script type="text/x-server-plugin">
+self.onopen = function(e){ e.conn.subscribe("alarmas"); };
+self.onmessage = function(e){ pubsub.publish("alarmas", e.data); };
+self.onclose = function(e){};
+</script>
+<script>
+let S={vecinos:JSON.parse(localStorage.getItem("av_vec")||"[]"),hist:JSON.parse(localStorage.getItem("av_hist")||"[]"),alarms:[],sound:true,selType:localStorage.getItem("av_tipo")||"policia",socket:null,cd:null,lastAlarm:0,lastSentId:"",mine:[]};
+let SV=[],SP=[],CV={id:null},CP={id:null},M={};
+function toast(m){let t=document.querySelector("#toast");t.textContent=m;t.style.display="block";clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",2500)}
+let BUSY=0;
+function setBusy(on,msg){let b=document.querySelector("#busy");if(!b)return;if(msg)document.querySelector("#busyTxt").textContent=msg;if(on){BUSY++;b.classList.add("show")}else{BUSY=Math.max(0,BUSY-1);if(!BUSY)b.classList.remove("show")}}
+async function busyBtn(btn,msg,fn){if(!btn||btn.disabled)return fn();let o=btn.innerHTML;btn.disabled=true;btn.classList.add("busy");btn.innerHTML='<span class="spin">⏳</span> '+msg;setBusy(true,msg);try{return await fn()}finally{try{btn.disabled=false;btn.classList.remove("busy");btn.innerHTML=o}catch(e){}setBusy(false)}}
+function genPass(n){n=n||8;let c="abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";try{let a=new Uint32Array(n);crypto.getRandomValues(a);for(let i=0;i<n;i++)s+=c[a[i]%c.length]}catch(e){for(let i=0;i<n;i++)s+=c[Math.floor(Math.random()*c.length)]}return s}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");["vecino","carga","centro","poste","vis","guia"].forEach(v=>document.querySelector("#v-"+v).hidden=(v!==b.dataset.v));setTimeout(()=>{for(let k in M){try{M[k].map.invalidateSize()}catch(e){}}},150)});
+function save(){localStorage.setItem("av_vec",JSON.stringify(S.vecinos));localStorage.setItem("av_hist",JSON.stringify(S.hist))}
+function renderVec(){let el=document.querySelector("#vecinosEl");el.innerHTML=S.vecinos.length?S.vecinos.map((v,i)=>`<div class="alarm">${v.n} — ${v.d} <button data-i="${i}" class="useBtn btn btn-ghost">Usar</button> <button data-j="${i}" class="delBtn btn btn-ghost">✕</button></div>`).join(""):"<small>Sin vecinos guardados.</small>";el.querySelectorAll(".useBtn").forEach(b=>b.onclick=()=>{let v=S.vecinos[+b.dataset.i];nameInput.value=v.n;addrInput.value=v.d;telInput.value=v.t||"";toast("Datos cargados")});el.querySelectorAll(".delBtn").forEach(b=>b.onclick=()=>{S.vecinos.splice(+b.dataset.j,1);save();renderVec()})}
+document.querySelector("#addVecinoBtn").onclick=e=>busyBtn(e.target,"Guardando…",async()=>{if(!nameInput.value.trim()){toast("Poné un nombre");return}S.vecinos.push({n:nameInput.value.trim(),d:addrInput.value.trim(),t:telInput.value.trim()});save();renderVec();toast("Vecino agregado");try{await bPost({action:"upsertVecino",nombre:nameInput.value.trim(),direccion:addrInput.value.trim(),telefono:telInput.value.trim()})}catch(err){}});
+let pb=document.querySelector("#panicBtn");
+function litCd(n){document.querySelectorAll("#cdNums span").forEach(s=>s.classList.toggle("lit",+s.dataset.n===n))}
+function cancelSOS(silent){if(S.cd){clearInterval(S.cd.iv);S.cd=null}litCd(0);if(!silent)toast("Alarma cancelada")}
+pb.onclick=()=>{if(S.cd){cancelSOS()}else{let n=3;litCd(n);S.cd={iv:setInterval(()=>{n--;if(n<=0){cancelSOS(true);fireAlarm(S.selType||"policia")}else litCd(n)},1000)};toast("Tocá Cancelar para anular")}};
+document.querySelector("#sosCancelBtn").onclick=()=>cancelSOS();
+function markChip(){document.querySelectorAll("#typeBar [data-t]").forEach(b=>b.classList.toggle("sel",b.dataset.t===S.selType))}
+document.querySelectorAll("#typeBar [data-t]").forEach(b=>b.onclick=()=>{S.selType=b.dataset.t;try{localStorage.setItem("av_tipo",S.selType)}catch(e){}markChip()});
+markChip();
+document.querySelector("#bubbleXBtn").onclick=()=>document.querySelector("#sosBubble").hidden=true;
+document.querySelector("#bubbleWaBtn").onclick=()=>{let n=document.querySelector("#waNumInput").value.replace(/\D/g,"");if(!n){toast("Cargá el WhatsApp en Opciones");return}location.href="https://wa.me/"+n};
+document.querySelector("#bubbleRetBtn").onclick=()=>{let a=S.alarms.find(x=>x.id===S.lastSentId);if(a){a.done="retirada";send({t:"retract",id:a.id});bLog("retirada",a.user,a.kind+" — "+a.addr,a.id);renderAlarms();renderVis()}document.querySelector("#sosBubble").hidden=true;toast("Alarma retractada")};
+function me(){return{n:nameInput.value.trim()||"Vecino",d:addrInput.value.trim()||"Sin dirección",t:telInput.value.trim()}}
+function myCoords(){let v=null;if(SES&&SES.vecino_id)v=SV.find(x=>String(x.id)===String(SES.vecino_id));return{lat:document.querySelector("#myLatInput").value.trim()||(v&&v.lat)||"",lng:document.querySelector("#myLngInput").value.trim()||(v&&v.lng)||"",pid:(v&&v.poste_id)||"",vid:SES?(SES.vecino_id||""):""}}
+async function fireAlarm(type){
+if(!SES){toast("Ingresá primero");return}
+let sim=document.querySelector("#simSel").value==="si";
+let now=Date.now();
+if(SES.rol!=="admin"&&!sim&&S.lastAlarm&&now-S.lastAlarm<60000){toast("Esperá "+Math.ceil((60000-(now-S.lastAlarm))/1000)+" seg para otra alarma");return}
+let c=myCoords();
+let a={t:"alarm",id:"a"+now.toString(36),user:me().n,addr:me().d,tel:me().t,kind:type,ts:now,lat:c.lat,lng:c.lng,vid:c.vid,pid:c.pid,sim:sim?1:0};
+S.lastAlarm=now;S.mine.unshift(a.id);if(S.mine.length>20)S.mine.length=20;
+send(a);onAlarm(a,true);bLog(sim?"simulacro":"alarma",a.user,a.kind+" — "+a.addr,a.id);toast(sim?"🧪 Simulacro enviado":"📡 Alarma enviada al Centro");S.lastSentId=a.id;if(!sim){let bb=document.querySelector("#sosBubble");if(bb)bb.hidden=false}
+try{if(navigator.vibrate)navigator.vibrate([200,100,200])}catch(e){}
+if(!sim&&document.querySelector("#call911Sel").value==="si"){toast("Abriendo teléfono en 911…");setTimeout(()=>{document.querySelector("#tel911").click()},800)}
+}
+function onAlarm(a,mine){
+if(S.alarms.some(x=>x.id===a.id))return;
+S.alarms.unshift(a);S.hist.unshift(a);if(S.hist.length>100)S.hist.length=100;save();renderAlarms();renderVis();focusAlarm(a);autoStats();
+if(!mine){sirenGo(true,a.kind);beep();flashTitle();toast("🚨 "+a.kind+": "+a.user)}
+}
+function flashTitle(){try{let o=document.title,n=0;let iv=setInterval(()=>{document.title=(n%2?"🚨 ALARMA — ":"")+o;if(++n>7){clearInterval(iv);document.title=o}},600)}catch(e){}}
+function canOp(){return SES&&(SES.rol==="admin"||SES.rol==="centro")}
+function renderAlarms(){
+let el=document.querySelector("#alarmsEl");
+document.querySelector("#centroCountEl").textContent="("+S.alarms.filter(a=>!a.done).length+" activas)";
+el.innerHTML=S.alarms.length?S.alarms.map(a=>`<div class="alarm ${a.kind==="medica"?"med":a.kind==="policia"?"pol":"dis"} ${a.done?"ok":"attn"}">${a.sim?"🧪 SIMULACRO ":""}${(INC[a.id]&&INC[a.id].tipo)?`📋 ${INC[a.id].tipo.replace(/_/g," ")}${INC[a.id].subtipo?" — "+INC[a.id].subtipo:""}${INC[a.id].condicion?" ("+INC[a.id].condicion+")":""} `:""}<b>${a.kind==="disuadir"?"🔊 DISUADIR":a.kind==="medica"?"🚑 MÉDICA":"🚔 POLICÍA"}</b> ${a.done?(a.done==="retirada"?"↩️ retirada":"✅ atendida"):"🚨 ACTIVA"}<br>👤 ${a.user} — 📍 ${a.addr} ${a.tel?" — 📞 "+a.tel:""}<br><small>${new Date(a.ts).toLocaleString()}</small><div class="row" style="margin-top:6px">${canOp()?`<button class="btn btn-green" data-r="${a.id}">Atendida</button><button class="btn btn-red" data-s="${a.id}">🔊 Activar sirena</button>`:""}${a.lat&&a.lng?`<button class="btn btn-ghost" data-m="${a.id}">🗺 Ver en mapa</button>`:""}</div>${canOp()?`<div class="row" style="margin-top:6px"><button class="btn btn-ghost" data-g="${a.id}">📝 Gestionar hecho</button></div><div id="ges-${a.id}" hidden style="margin-top:8px"><div class="row"><div><label>Tipo</label><select id="gt-${a.id}"><option value="">Elegí tipo…</option></select></div><div><label>Subtipo</label><select id="gs-${a.id}" disabled><option value="">Primero el tipo…</option></select></div></div><div><label>Tentativa / Consumado</label><select id="gc-${a.id}"><option value="">—</option><option value="TENTATIVA">TENTATIVA</option><option value="CONSUMADO">CONSUMADO</option></select></div><div><label>Síntesis / comentario</label><input id="gn-${a.id}"></div><div><label>Cierre final</label><input id="gr-${a.id}"></div><button class="btn btn-green" data-sv="${a.id}" style="margin-top:6px">💾 Guardar gestión</button></div>`:""}</div>`).join(""):"<div class='card'><small>Sin alarmas. Cuando un vecino presione SOS aparece aquí.</small></div>";
+el.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>busyBtn(b,"Guardando…",async()=>{let a=S.alarms.find(x=>x.id===b.dataset.r);a.done="atendida";send({t:"resolve",id:a.id});bLog("atendida",a.user,a.kind+" — "+a.addr,a.id);renderAlarms();renderMon()}));
+el.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{let a=S.alarms.find(x=>x.id===b.dataset.s);send({t:"siren",on:true,modo:a.kind});sirenGo(true,a.kind)});
+el.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{let a=S.alarms.find(x=>x.id===b.dataset.m);if(a)centerMon(a.lat,a.lng,a.user)});
+el.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{let id=b.dataset.g;let f=document.getElementById("ges-"+id);if(!f)return;f.hidden=!f.hidden;if(f.hidden)return;let t=document.getElementById("gt-"+id);t.innerHTML='<option value="">Elegí tipo…</option>'+Object.keys(TIPOS).map(k=>`<option value="${k}">${k.replace(/_/g," ")}</option>`).join("");let old=INC[id];if(old&&old.tipo){t.value=old.tipo;fillSub(id,old.subtipo);document.getElementById("gc-"+id).value=old.condicion||"";document.getElementById("gn-"+id).value=old.sintesis||"";document.getElementById("gr-"+id).value=old.cierre||""}t.onchange=()=>fillSub(id)});
+el.querySelectorAll("[data-sv]").forEach(b=>b.onclick=()=>busyBtn(b,"Guardando…",async()=>{let id=b.dataset.sv;let rec={action:"upsertIncidente",id_alarma:id,tipo:document.getElementById("gt-"+id).value,subtipo:document.getElementById("gs-"+id).value,condicion:document.getElementById("gc-"+id).value,sintesis:document.getElementById("gn-"+id).value,cierre:document.getElementById("gr-"+id).value};if(!rec.tipo){toast("Elegí el tipo");return}try{let j=await bPost(rec);if(!j.ok){toast("❌ "+(j.error||"falló"));return}INC[id]={id_alarma:id,tipo:rec.tipo,subtipo:rec.subtipo,condicion:rec.condicion,sintesis:rec.sintesis,cierre:rec.cierre};toast("Gestión guardada");renderAlarms()}catch(e){toast("Sin conexión")}}));
+let m=document.querySelector("#myAlarmsEl");m.innerHTML=S.hist.slice(0,3).map(a=>`<div class="alarm"><small>${a.kind} — ${new Date(a.ts).toLocaleString()}</small></div>`).join("");
+renderMine();renderMon();renderVisMap();alertFlash();
+}
+function renderMine(){
+let el=document.querySelector("#myAlarmsEl");if(!el)return;
+let mine=S.alarms.filter(a=>S.mine.includes(a.id)&&!a.done);
+let h=S.hist.slice(0,3).map(a=>`<div class="alarm"><small>${a.sim?"🧪 ":""}${a.kind} — ${new Date(a.ts).toLocaleString()}</small></div>`).join("");
+el.innerHTML=(mine.length?mine.map(a=>`<div class="alarm"><small>${a.sim?"🧪 SIMULACRO ":""}${a.kind} — ${new Date(a.ts).toLocaleString()}</small><br><button class="btn btn-ghost" data-x="${a.id}">↩️ Retractar (fue error)</button></div>`).join(""):"")+h;
+el.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>busyBtn(b,"Enviando…",async()=>{let a=S.alarms.find(x=>x.id===b.dataset.x);if(!a)return;a.done="retirada";send({t:"retract",id:a.id});bLog("retirada",a.user,a.kind+" — "+a.addr,a.id);renderAlarms();renderVis()}));
+}
+document.querySelector("#clearBtn").onclick=()=>{S.alarms=S.alarms.filter(a=>!a.done);renderAlarms()};
+document.querySelector("#clearHistBtn").onclick=e=>busyBtn(e.target,"Borrando…",async()=>{S.hist=[];S.mine=[];save();renderAlarms();renderVis();toast("Historial borrado")});
+document.querySelector("#soundBtn").onclick=e=>{S.sound=!S.sound;e.target.textContent=S.sound?"🔔 Sonido: ON":"🔕 Sonido: OFF"};
+function beep(){if(!S.sound)return;try{let c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.2;o.start();[0,300,600].forEach(t=>setTimeout(()=>o.frequency.value=o.frequency.value===880?660:880,t));setTimeout(()=>{o.stop();c.close()},1200)}catch(e){}}
+let sirenCtx=null,sirenNodes=null;
+function sirenGo(on,modo){
+let el=document.querySelector("#sirenEl");
+let log=document.querySelector("#posteLogEl");
+if(on){el.classList.add("go");el.textContent="🔊 SIRENA + LUCES ("+(modo||"disuadir")+")";log.innerHTML="<small>"+new Date().toLocaleTimeString()+" — ORDEN: encender ("+(modo||"")+")</small><br>"+log.innerHTML;sirenSound(true,modo);let u=document.querySelector("#espUrlInput").value.trim();if(u)fetch(u,{mode:"no-cors"}).catch(()=>{})}
+else{el.classList.remove("go");el.textContent="APAGADA";sirenSound(false);log.innerHTML="<small>"+new Date().toLocaleTimeString()+" — ORDEN: apagar</small><br>"+log.innerHTML;let u=document.querySelector("#espUrlInput").value.trim();if(u)fetch(u.replace("on=1","on=0"),{mode:"no-cors"}).catch(()=>{})}
+}
+function sirenSound(on,modo){
+try{
+if(on&&!sirenCtx){sirenCtx=new (window.AudioContext||window.webkitAudioContext)();let g=sirenCtx.createGain();g.gain.value=.1;let f=sirenCtx.createBiquadFilter();f.type="lowpass";f.frequency.value=2200;f.connect(g);g.connect(sirenCtx.destination);
+if(modo==="policia"){let o1=sirenCtx.createOscillator();o1.type="sawtooth";o1.frequency.value=650;let o2=sirenCtx.createOscillator();o2.type="square";o2.frequency.value=325;let g2=sirenCtx.createGain();g2.gain.value=.5;o1.connect(f);o2.connect(g2);g2.connect(f);o1.start();o2.start();let t=0;sirenNodes={o:[o1,o2],iv:setInterval(()=>{t+=.1;let ph=(t%6)/6,fr=650+800*(.5-.5*Math.cos(ph*2*Math.PI));o1.frequency.setValueAtTime(fr,sirenCtx.currentTime);o2.frequency.setValueAtTime(fr/2,sirenCtx.currentTime)},100)}}
+else{let o=sirenCtx.createOscillator();o.type="sawtooth";o.frequency.value=600;o.connect(f);o.start();let up=true;sirenNodes={o:[o],iv:setInterval(()=>{o.frequency.value=up?900:600;up=!up},500)}}}
+if(!on&&sirenCtx){try{clearInterval(sirenNodes.iv);sirenNodes.o.forEach(o=>{try{o.stop()}catch(_){}})}catch(_){}try{sirenCtx.close()}catch(_){}sirenCtx=null;sirenNodes=null}}catch(e){}
+}
+function alertFlash(){try{let act=S.alarms.some(a=>!a.done);document.querySelector("#alertFlash").classList.toggle("on",act);if(act)wakeOn();else wakeOff()}catch(e){}}
+let WL=null;
+async function wakeOn(){try{if(!("wakeLock" in navigator))return;if(!WL)WL=await navigator.wakeLock.request("screen")}catch(e){}}
+function wakeOff(){try{if(WL){WL.release();WL=null}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&S.alarms.some(a=>!a.done))wakeOn()});
+document.querySelector("#sirenOnBtn").onclick=()=>{sirenGo(true,"manual");send({t:"siren",on:true,modo:"manual"})};
+document.querySelector("#sirenOffBtn").onclick=()=>{sirenGo(false);send({t:"siren",on:false})};
+document.querySelector("#fsBtn").onclick=()=>{try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen()}catch(e){toast("No soportado en este equipo")}};
+let BK={url:localStorage.getItem("av_burl")||"",key:localStorage.getItem("av_bkey")||""};
+function bStatus(m){let e=document.querySelector("#backendStatusEl");if(e)e.innerHTML="<small>"+m+"</small>"}
+function bCfg(){let u=document.querySelector("#backendUrlInput"),k=document.querySelector("#backendKeyInput");return{url:(u&&u.value.trim())||BK.url,key:(k&&k.value.trim())||BK.key,token:(SES&&SES.token)||""}}
+function tokErr(j){if(j&&!j.ok&&(j.error==="token_invalido"||j.error==="token_expirado")){try{SES=null;localStorage.removeItem("av_ses");applySes()}catch(e){}toast("Sesión vencida, ingresá de nuevo")}}
+async function fetchT(u,o,ms){let c=new AbortController();let t=setTimeout(()=>c.abort(),ms||20000);try{return await fetch(u,Object.assign({},o||{},{signal:c.signal}))}finally{clearTimeout(t)}}
+async function bGet(a,extra){setBusy(true);try{let c=bCfg();let r=await fetchT(c.url+"?action="+encodeURIComponent(a)+(extra||"")+"&apiKey="+encodeURIComponent(c.key)+"&token="+encodeURIComponent(c.token||""));let j=await r.json();tokErr(j);return j}finally{setBusy(false)}}
+async function loadGlob(){let el=document.querySelector("#globHistEl");el.innerHTML="<small>⏳ Cargando…</small>";try{let j=await bGet("auditoria","&limit=200");if(!j.ok){el.innerHTML="<small>❌ "+(j.error||"falló")+"</small>";return}el.innerHTML=(j.data||[]).map(e=>`<div><small>${String(e.timestamp||"").slice(0,19).replace("T"," ")} — <b>${e.tipo_evento||""}</b> — ${e.actor||""} — ${e.detalle||""}</small></div>`).join("")||"<small>Sin eventos.</small>"}catch(e){el.innerHTML="<small>❌ Sin conexión</small>"}}
+async function bPost(p){setBusy(true);try{let c=bCfg();let body={apiKey:c.key};if(c.token)body.token=c.token;for(let k in p)body[k]=p[k];let r=await fetchT(c.url,{method:"POST",body:JSON.stringify(body)});let j=await r.json();if(!(p&&p.action==="login"))tokErr(j);return j}finally{setBusy(false)}}
+async function bTest(){try{let j=await bGet("ping");bStatus(j.ok?"✅ Conectado":"❌ "+(j.error||"falló"))}catch(e){bStatus("❌ Sin conexión")}}
+async function bPull(){try{let j=await bGet("vecinos");if(!j.ok){bStatus("❌ "+(j.error||"falló"));return}S.vecinos=j.data.filter(v=>String(v.activo||"SI")!=="NO").map(v=>({n:v.nombre||"",d:v.direccion||"",t:v.telefono||"",pid:v.poste_id||"",vid:v.id||""}));save();renderVec();bStatus("✅ "+S.vecinos.length+" vecinos cargados")}catch(e){bStatus("❌ Sin conexión")}}
+function bLog(tipo,actor,detalle,id_ref){try{let c=bCfg();if(!c.url||!c.key)return;fetch(c.url,{method:"POST",body:JSON.stringify((()=>{let bd={apiKey:c.key,action:"evento",tipo,actor,detalle,id_ref:id_ref||""};if(c.token)bd.token=c.token;return bd})())}).catch(()=>{})}catch(e){}}
+function bInit(){let u=document.querySelector("#backendUrlInput"),k=document.querySelector("#backendKeyInput");if(BK.url)bStatus("Configurado. Probá conexión.");let um=document.querySelector("#umbralInput");if(um){um.value=localStorage.getItem("av_umbral")||"5";um.onchange=()=>{localStorage.setItem("av_umbral",um.value||"5");renderSalud()}}document.querySelector("#backendSaveBtn").onclick=()=>{BK={url:u.value.trim()||BK.url,key:k.value.trim()||BK.key};localStorage.setItem("av_burl",BK.url);localStorage.setItem("av_bkey",BK.key);u.value="";k.value="";bStatus("💾 Guardado");toast("Backend guardado")};document.querySelector("#backendTestBtn").onclick=e=>busyBtn(e.target,"Probando…",bTest);document.querySelector("#backendPullBtn").onclick=e=>busyBtn(e.target,"Cargando…",bPull);
+document.querySelector("#revokeBtn").onclick=async e=>{let b=e.target;if(!b.dataset.arm){b.dataset.arm="1";b.textContent="⚠️ Tocá de nuevo para confirmar";setTimeout(()=>{b.dataset.arm="";b.textContent="🔌 Cerrar todas las sesiones"},4000);return}b.dataset.arm="";b.textContent="🔌 Cerrar todas las sesiones";await busyBtn(b,"Cerrando…",async()=>{try{let j=await bPost({action:"revoke"});toast(j.ok?"Sesiones cerradas":"❌ "+(j.error||"falló"))}catch(_){toast("Sin conexión")}})}}
+function sha256hex(ascii){function rr(v,a){return(v>>>a)|(v<<(32-a))}var mp=Math.pow,mw=mp(2,32),res="";var words=[],bl=ascii.length*8;var hash=sha256hex.h=sha256hex.h||[],k=sha256hex.k=sha256hex.k||[];var pc=k.length,comp={};for(var cand=2;pc<64;cand++){if(!comp[cand]){for(var i=0;i<313;i+=cand)comp[i]=cand;hash[pc]=(mp(cand,.5)*mw)|0;k[pc++]=(mp(cand,1/3)*mw)|0}}ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";for(var i=0;i<ascii.length;i++){var j=ascii.charCodeAt(i);if(j>>8)return "";words[i>>2]|=j<<((3-i)%4)*8}words[words.length]=(bl/mw)|0;words[words.length]=bl;for(var j2=0;j2<words.length;){var w=words.slice(j2,j2+=16),oh=hash;hash=hash.slice(0,8);for(var i2=0;i2<64;i2++){var w15=w[i2-15],w2=w[i2-2],a=hash[0],e=hash[4];var t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i2]+(w[i2]=(i2<16)?w[i2]:(w[i2-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i2-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);var t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0}for(var i3=0;i3<8;i3++)hash[i3]=(hash[i3]+oh[i3])|0}for(var i4=0;i4<8;i4++)for(var j3=3;j3+1;j3--){var b=(hash[i4]>>(j3*8))&255;res+=((b<16)?"0":"")+b.toString(16)}return res}
+async function pwHash(u,p){let s=unescape(encodeURIComponent(String(u).toLowerCase()+"|"+String(p)));if(window.crypto&&crypto.subtle&&window.TextEncoder){try{let d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return[...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){}}return sha256hex(s)}
+function loginErr(e){return e==="no_existe"?"❌ Usuario inexistente":e==="desactivado"?"❌ Usuario desactivado":e==="clave"?"❌ Clave incorrecta":"❌ "+(e||"falló")}
+let SES=JSON.parse(localStorage.getItem("av_ses")||"null");
+function loginMsg(m){document.querySelector("#loginMsgEl").innerHTML="<small>"+m+"</small>"}
+function perms(){let r=(SES&&SES.rol)||"";if(r==="admin")return["vecino","carga","centro","poste","vis","guia"];if(r==="carga")return["carga"];if(r==="centro")return["centro"];if(r==="visualizador")return["vis"];if(r==="poste")return["poste"];return["vecino"]}
+function applySes(){let l=document.querySelector("#loginEl"),o=document.querySelector("#logoutBtn");if(!SES){l.classList.remove("hide");o.hidden=true;return}l.classList.add("hide");o.hidden=false;document.querySelector("#userNameEl").textContent=SES.username+" · "+SES.rol;let p=perms();document.querySelectorAll("nav button").forEach(b=>{b.style.display=p.includes(b.dataset.v)?"":"none"});let cur=document.querySelector("nav button.on");if(cur&&cur.style.display==="none"){document.querySelector('nav button[data-v="'+p[0]+'"]').click()}document.querySelector("#backendCard").style.display=SES.rol==="admin"?"":"none";let nr=document.querySelector("#nuRolSel");if(SES.rol==="admin")nr.innerHTML='<option value="vecino">vecino</option><option value="centro">centro</option><option value="visualizador">visualizador</option><option value="carga">carga</option><option value="poste">punto de alarma</option><option value="admin">admin</option>';else nr.innerHTML='<option value="vecino">vecino</option><option value="carga">carga</option>';if(SES.vecino_id){let v=SV.find(x=>String(x.id)===String(SES.vecino_id))||S.vecinos.find(x=>x.vid===SES.vecino_id);if(v){nameInput.value=v.n||v.nombre||"";addrInput.value=v.d||v.direccion||"";telInput.value=v.t||v.telefono||"";if(v.lat)document.querySelector("#myLatInput").value=v.lat;if(v.lng)document.querySelector("#myLngInput").value=v.lng;fillMyPoste()}}}
+async function doLogin(){let u=document.querySelector("#loginUserInput").value.trim().toLowerCase(),p=document.querySelector("#loginPassInput").value;if(!u||!p){loginMsg("❌ Poné usuario y clave");return}if(!BK.url||!BK.key){try{document.querySelector("#lgConnDet").hidden=false}catch(e){}loginMsg("⚙ Falta la conexión: abrila abajo y guardá URL + clave");return}loginMsg("⏳ Verificando…");try{let h=await pwHash(u,p);let j=await bPost({action:"login",username:u,prueba:h});if(j.ok&&j.user){SES={username:j.user.username,rol:String(j.user.rol||"vecino").toLowerCase(),vecino_id:j.user.vecino_id||"",poste_id:j.user.poste_id||"",token:j.token||""};localStorage.setItem("av_ses",JSON.stringify(SES));bLog("login",SES.username,"ingreso "+SES.rol,"");applySes();await loadBase();toast("Hola "+SES.username);return}if(j.error!=="bad_action"){loginMsg(loginErr(j.error));return}let g=await bGet("usuarios");if(!g.ok){loginMsg(loginErr(g.error));return}let f=(g.data||[]).find(x=>String(x.username||"").toLowerCase()===u);if(!f){loginMsg(loginErr("no_existe"));return}if(String(f.activo||"SI")==="NO"){loginMsg(loginErr("desactivado"));return}let st=String(f.clave||"");let okH=(st===h)||(st&&!/^[0-9a-f]{64}$/i.test(st)&&sha256hex(unescape(encodeURIComponent(u+"|"+st)))===h);if(!okH){loginMsg(loginErr("clave"));return}SES={username:u,rol:String(f.rol||"vecino").toLowerCase(),vecino_id:f.vecino_id||"",poste_id:f.poste_id||""};localStorage.setItem("av_ses",JSON.stringify(SES));bLog("login",SES.username,"ingreso "+SES.rol,"");applySes();await loadBase();toast("Hola "+SES.username)}catch(e){try{document.querySelector("#lgConnDet").hidden=false}catch(_){}loginMsg("❌ Sin conexión (revisá ⚙ Conexión)")}}
+function doLogout(){try{let c=bCfg();if(c.token)fetch(c.url,{method:"POST",body:JSON.stringify({apiKey:c.key,action:"logout",token:c.token})}).catch(()=>{})}catch(e){}SES=null;localStorage.removeItem("av_ses");applySes()}
+async function nuList(btn){let run=async()=>{try{let j=await bGet("usuarios");if(!j.ok){toast("❌ "+(j.error||"falló"));return}let rows=(j.data||[]).slice();if(SES&&SES.rol==="carga")rows=rows.filter(x=>["vecino","carga"].indexOf(String(x.rol||"").toLowerCase())>=0);rows=rows.slice(-30).reverse();let el=document.querySelector("#usersEl");el.innerHTML=(rows.length?'<table class="ut"><tr><th>Usuario</th><th>Rol</th><th>Vecino</th><th>Estado</th><th>Acciones</th></tr>'+rows.map(x=>{let off=String(x.activo||"SI")==="NO";return "<tr><td>👤 "+x.username+"</td><td>"+x.rol+"</td><td>"+(x.vecino_id||"—")+"</td><td>"+(off?"NO (baja)":(x.activo||"SI"))+"</td><td><button class=\"btn btn-ghost\" data-tg=\""+x.username+"\">"+(off?"Activar":"Desactivar")+"</button> <button class=\"btn btn-ghost\" data-rp=\""+x.username+"\">🔑 Reiniciar clave</button></td></tr>"}).join("")+"</table>":"<small>Sin usuarios.</small>")+'<div id="newPassEl" style="margin-top:8px"></div><div><small>Últimos '+(rows.length)+' usuarios'+(SES&&SES.rol==="carga"?" (vecino y carga)":"")+'. La clave nunca se muestra: solo se puede generar una nueva.</small></div>';el.querySelectorAll("[data-tg]").forEach(b=>b.onclick=()=>busyBtn(b,"Guardando…",async()=>{let g=await bGet("usuarios");let row=(g.data||[]).find(x=>String(x.username)===String(b.dataset.tg));let off=String((row&&row.activo)||"SI")==="NO";try{let r=await bPost({action:"upsertUsuario",username:String(b.dataset.tg),activo:off?"SI":"NO",actorRol:SES?SES.rol:""});if(!r.ok){toast("❌ "+(r.error||"falló"));return}toast(off?"Usuario activado":"Usuario desactivado");await nuList()}catch(e){toast("Sin conexión")}}));el.querySelectorAll("[data-rp]").forEach(b=>b.onclick=()=>busyBtn(b,"Reseteando…",async()=>{let u=String(b.dataset.rp);let np=genPass(8);try{let r=await bPost({action:"upsertUsuario",username:u,clave:await pwHash(u,np),actorRol:SES?SES.rol:""});if(!r.ok){toast("❌ "+(r.error||"falló"));return}let np2=document.querySelector("#newPassEl");if(np2)np2.innerHTML='<div class="alarm">🔑 Nueva clave de <b>'+u+'</b>: <span class="kbd">'+np+'</span> <button class="btn btn-ghost" id="copyPassBtn">📋 Copiar</button><br><small>Pasala al vecino ahora: no se vuelve a mostrar.</small></div>';let cp=document.querySelector("#copyPassBtn");if(cp)cp.onclick=()=>{try{navigator.clipboard.writeText(np);toast("Clave copiada")}catch(e){toast(np)}};toast("Clave reiniciada")}catch(e){toast("Sin conexión")}}))}catch(e){toast("Sin conexión")}};if(btn)await busyBtn(btn,"Cargando…",run);else await run()}
+async function nuCreate(btn){let u=document.querySelector("#nuUserInput").value.trim().toLowerCase(),p=document.querySelector("#nuPassInput").value,r=document.querySelector("#nuRolSel").value,v=document.querySelector("#nuVecInput").value.trim();if(!u||!p){toast("Usuario y clave");return}await busyBtn(btn||document.querySelector("#nuCreateBtn"),"Guardando…",async()=>{try{let j=await bPost({action:"upsertUsuario",username:u,clave:await pwHash(u,p),rol:r,vecino_id:v,activo:"SI",actorRol:SES?SES.rol:""});if(!j.ok){toast("❌ "+(j.error||"falló"));return}toast("Usuario guardado");await nuList()}catch(e){toast("Sin conexión")}})}
+function loginInit(){document.querySelector("#loginBtn").onclick=e=>busyBtn(e.target,"Verificando…",doLogin);document.querySelector("#logoutBtn").onclick=doLogout;document.querySelector("#nuCreateBtn").onclick=e=>nuCreate(e.target);document.querySelector("#nuListBtn").onclick=e=>nuList(e.target);document.querySelector("#lgSaveBtn").onclick=e=>busyBtn(e.target,"Probando…",async()=>{let nu=document.querySelector("#lgUrlInput").value.trim()||BK.url,nk=document.querySelector("#lgKeyInput").value.trim()||BK.key;BK={url:nu,key:nk};localStorage.setItem("av_burl",BK.url);localStorage.setItem("av_bkey",BK.key);document.querySelector("#lgUrlInput").value="";document.querySelector("#lgKeyInput").value="";let u=document.querySelector("#backendUrlInput"),k=document.querySelector("#backendKeyInput");if(u)u.value="";if(k)k.value="";try{document.querySelector("#lgConnDet").hidden=true}catch(_){}if(!BK.url||!BK.key){loginMsg("⚙ Guardado incompleto: falta URL o clave");return}try{let r=await fetchT(BK.url+"?action=ping&apiKey="+encodeURIComponent(BK.key));let j=await r.json();loginMsg(j.ok?"✅ Conectado, ya podés entrar":"❌ "+(j.error||"falló (revisá clave)"))}catch(_){loginMsg("❌ Sin conexión (revisá URL)")}});document.querySelector("#eyeBtn").onclick=()=>{let i=document.querySelector("#loginPassInput");i.type=i.type==="password"?"text":"password"};document.querySelector("#eyeBtn2").onclick=()=>{let i=document.querySelector("#nuPassInput");i.type=i.type==="password"?"text":"password"};try{if(!BK.url||!BK.key)document.querySelector("#lgConnDet").hidden=false}catch(e){}applySes();if(SES)loadBase()}
+function fillSub(id,keep){let t=document.getElementById("gt-"+id),s=document.getElementById("gs-"+id);if(!t||!s)return;let list=TIPOS[t.value]||[];s.innerHTML='<option value="">Elegí subtipo…</option>'+list.map(x=>`<option value="${x}">${x}</option>`).join("");s.disabled=!list.length;if(keep)s.value=keep}
+let TIPOS={},INC={};
+async function loadTipos(){try{let r=await fetch("src/tipos-delito.json");TIPOS=(await r.json()).tipos||{}}catch(e){TIPOS={}}}
+async function loadInc(){try{let j=await bGet("incidentes");if(j.ok){INC={};(j.data||[]).forEach(x=>INC[x.id_alarma]=x);renderAlarms()}}catch(e){}}
+function send(o){try{if(S.socket&&S.socket.readyState===1)S.socket.send(JSON.stringify(o))}catch(e){}}
+function connect(){
+let dot=document.querySelector("#connEl");
+try{S.socket=root.createServerSocket()}catch(e){dot.innerHTML="<small>sin servidor (vista previa sin guardar)</small>";return}
+S.socket.addEventListener("open",()=>dot.innerHTML='<span class="dot on"></span> <small>en línea</small>');
+S.socket.addEventListener("message",e=>{try{let m=JSON.parse(e.data);if(m.t==="alarm")onAlarm(m,false);else if(m.t==="retract"){let a=S.alarms.find(x=>x.id===m.id);if(a){a.done="retirada";renderAlarms();renderVis()}}else if(m.t==="resolve"){let a=S.alarms.find(x=>x.id===m.id);if(a){a.done="atendida";renderAlarms();renderVis()}}else if(m.t==="siren")sirenGo(m.on,m.modo)}catch(_){}});
+let back=1000;
+S.socket.addEventListener("close",e=>{dot.innerHTML="<small>reconectando…</small>";if(e.code===4403||e.code===4429)return;setTimeout(connect,Math.min(back*=1.5,10000))});
+}
+function emojiIcon(e){return L.divIcon({html:"<div style='font-size:22px;text-align:center'>"+e+"</div>",className:"",iconSize:[24,24],iconAnchor:[12,12]})}
+function dropPin(id,la,ln){let o=M[id];if(!o||typeof L==="undefined")return;if(!o.marker){o.marker=L.marker([la,ln],{draggable:true}).addTo(o.map);o.marker.on("dragend",()=>{let ll=o.marker.getLatLng();if(o.cb)o.cb(+ll.lat.toFixed(6),+ll.lng.toFixed(6))})}else o.marker.setLatLng([la,ln])}
+function mkMap(id,lat,lng,cb){
+if(typeof L==="undefined"){let el=document.querySelector("#"+id);if(el)el.innerHTML="<small>Cargá lat/lng manual (sin mapa).</small>";return null}
+if(M[id]){M[id].cb=cb||M[id].cb;if(lat&&lng){M[id].map.setView([+lat,+lng],M[id].map.getZoom());dropPin(id,+lat,+lng)}return M[id]}
+let c0=(lat&&lng)?[+lat,+lng]:[-28.4696,-65.7795];
+let map=L.map(id).setView(c0,14);
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"}).addTo(map);
+M[id]={map,marker:null,cb};
+map.on("click",e=>{dropPin(id,e.latlng.lat,e.latlng.lng);if(M[id].cb)M[id].cb(+e.latlng.lat.toFixed(6),+e.latlng.lng.toFixed(6))});
+if(lat&&lng)dropPin(id,+lat,+lng);
+return M[id];
+}
+function gpsFill(latId,lngId,mapId){if(!navigator.geolocation){toast("Sin GPS");return}toast("Buscando GPS…");navigator.geolocation.getCurrentPosition(p=>{let la=+p.coords.latitude.toFixed(6),ln=+p.coords.longitude.toFixed(6);document.querySelector("#"+latId).value=la;document.querySelector("#"+lngId).value=ln;mkMap(mapId,la,ln);if(M[mapId]){M[mapId].map.setView([la,ln],16);dropPin(mapId,la,ln)}},()=>toast("No se pudo obtener GPS"),{enableHighAccuracy:true})}
+function posteName(pid){let p=SP.find(x=>String(x.id_poste)===String(pid));return p?(p.nombre||p.id_poste):(pid||"—")}
+function fillMyPoste(){let v=SV.find(x=>String(x.id)===String(SES.vecino_id));document.querySelector("#myPosteEl").innerHTML=v?("<small>🔊 Tu punto de alarma: <b>"+posteName(v.poste_id)+"</b></small>"):("<small>Sin punto de alarma asignado.</small>")}
+async function loadBase(){
+let c=bCfg();if(!c.url||!c.key)return;
+try{let j=await bGet("vecinos");if(j.ok)SV=j.data||[]}catch(e){}
+try{let j=await bGet("postes");if(j.ok)SP=j.data||[]}catch(e){}
+renderCarga();fillPosteSels();renderMon();renderSalud();renderVisMap();loadInc();applySes();
+if(SES&&(SES.rol==="carga"||SES.rol==="admin"))try{await nuList()}catch(e){}
+}
+function fillPosteSels(){
+let opts='<option value="">Sin punto de alarma</option>'+SP.filter(p=>String(p.estado||"activo")!=="inactivo").map(p=>`<option value="${p.id_poste}">${p.nombre||p.id_poste}</option>`).join("");
+document.querySelector("#cvPosteSel").innerHTML=opts;
+document.querySelector("#posteSel").innerHTML=SP.length?SP.map(p=>`<option value="${p.id_poste}">${p.nombre||p.id_poste}</option>`).join(""):'<option value="">Sin puntos de alarma</option>';
+if(SES&&SES.poste_id)document.querySelector("#posteSel").value=SES.poste_id;
+syncPosteForm();
+}
+function renderCarga(){
+document.querySelector("#cvCountEl").textContent="("+SV.length+")";
+document.querySelector("#cpCountEl").textContent="("+SP.length+")";
+document.querySelector("#cvListEl").innerHTML=SV.length?SV.map(v=>`<div class="alarm ${String(v.activo)==="NO"?"ok":""}"><b>${v.nombre||"?"}</b> ${String(v.activo)==="NO"?"(baja)":""}<br><small>📍 ${v.direccion||""} ${v.telefono?" — 📞 "+v.telefono:""}<br>🔊 ${posteName(v.poste_id)} ${v.lat&&v.lng?" ·📌 "+v.lat+","+v.lng:" · <i>sin coords</i>"}</small><br><button class="btn btn-ghost" data-e="${v.id}">Editar</button></div>`).join(""):"<small>Cargá el primer vecino abajo.</small>";
+document.querySelector("#cvListEl").querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{let v=SV.find(x=>String(x.id)===String(b.dataset.e));if(!v)return;CV.id=v.id;cvNameInput.value=v.nombre||"";cvAddrInput.value=v.direccion||"";cvTelInput.value=v.telefono||"";cvPosteSel.value=v.poste_id||"";cvLatInput.value=v.lat||"";cvLngInput.value=v.lng||"";cvActiveSel.value=v.activo||"SI";mkMap("cvMapEl",v.lat,v.lng);toast("Editando vecino")});
+document.querySelector("#cpListEl").innerHTML=SP.length?SP.map(p=>{let n=SV.filter(v=>String(v.poste_id)===String(p.id_poste)&&String(v.activo)!=="NO").length;return `<div class="alarm"><b>${p.nombre||p.id_poste}</b><br><small>📍 ${p.direccion||""}<br>👥 ${n} vecinos · ${puntoSalud(p).t} ${p.lat&&p.lng?" ·📌 "+p.lat+","+p.lng:" · <i>sin coords</i>"}</small><br><button class="btn btn-ghost" data-e="${p.id_poste}">Editar</button></div>`}).join(""):"<small>Cargá el primer punto de alarma abajo.</small>";
+document.querySelector("#cpListEl").querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{let p=SP.find(x=>String(x.id_poste)===String(b.dataset.e));if(!p)return;CP.id=p.id_poste;cpNameInput.value=p.nombre||"";cpAddrInput.value=p.direccion||"";cpEspInput.value=p.esp_url||"";cpLatInput.value=p.lat||"";cpLngInput.value=p.lng||"";cpStateSel.value=p.estado||"activo";mkMap("cpMapEl",p.lat,p.lng);toast("Editando punto de alarma")});
+}
+function cargaInit(){
+mkMap("cvMapEl",null,null,(la,ln)=>{cvLatInput.value=la;cvLngInput.value=ln});
+mkMap("cpMapEl",null,null,(la,ln)=>{cpLatInput.value=la;cpLngInput.value=ln});
+mkMap("myMapEl",null,null,(la,ln)=>{myLatInput.value=la;myLngInput.value=ln});
+mkMap("posteMapEl",null,null,(la,ln)=>{posteLatInput.value=la;posteLngInput.value=ln});
+document.querySelector("#cvGpsBtn").onclick=()=>gpsFill("cvLatInput","cvLngInput","cvMapEl");
+document.querySelector("#cpGpsBtn").onclick=()=>gpsFill("cpLatInput","cpLngInput","cpMapEl");
+document.querySelector("#myGpsBtn").onclick=()=>gpsFill("myLatInput","myLngInput","myMapEl");
+document.querySelector("#posteGpsBtn").onclick=()=>gpsFill("posteLatInput","posteLngInput","posteMapEl");
+document.querySelector("#cvClearBtn").onclick=()=>{CV.id=null;cvNameInput.value="";cvAddrInput.value="";cvTelInput.value="";cvPosteSel.value="";cvLatInput.value="";cvLngInput.value="";cvActiveSel.value="SI"};
+document.querySelector("#cpClearBtn").onclick=()=>{CP.id=null;cpNameInput.value="";cpAddrInput.value="";cpEspInput.value="";cpLatInput.value="";cpLngInput.value="";cpStateSel.value="activo"};
+document.querySelector("#cvSaveBtn").onclick=e=>busyBtn(e.target,"Guardando…",async()=>{if(!cvNameInput.value.trim()){toast("Poné un nombre");return}try{let j=await bPost({action:"upsertVecino",id:CV.id||undefined,nombre:cvNameInput.value.trim(),direccion:cvAddrInput.value.trim(),telefono:cvTelInput.value.trim(),poste_id:cvPosteSel.value,lat:cvLatInput.value.trim(),lng:cvLngInput.value.trim(),activo:cvActiveSel.value});if(!j.ok){toast("❌ "+(j.error||"falló"));return}toast("Vecino guardado");CV.id=null;await loadBase()}catch(err){toast("Sin conexión")}});
+document.querySelector("#cpSaveBtn").onclick=e=>busyBtn(e.target,"Guardando…",async()=>{if(!cpNameInput.value.trim()){toast("Poné un nombre");return}try{let j=await bPost({action:"upsertPoste",id_poste:CP.id||undefined,nombre:cpNameInput.value.trim(),direccion:cpAddrInput.value.trim(),esp_url:cpEspInput.value.trim(),lat:cpLatInput.value.trim(),lng:cpLngInput.value.trim(),estado:cpStateSel.value});if(!j.ok){toast("❌ "+(j.error||"falló"));return}toast("Punto de alarma guardado");CP.id=null;await loadBase()}catch(err){toast("Sin conexión")}});
+document.querySelector("#mySaveBtn").onclick=e=>busyBtn(e.target,"Guardando…",async()=>{if(!SES||!SES.vecino_id){toast("Tu usuario no tiene vecino asignado");return}try{let v=SV.find(x=>String(x.id)===String(SES.vecino_id))||{};let j=await bPost({action:"upsertVecino",id:SES.vecino_id,nombre:nameInput.value.trim()||v.nombre||SES.username,direccion:addrInput.value.trim()||v.direccion||"",telefono:telInput.value.trim()||v.telefono||"",poste_id:v.poste_id||"",lat:myLatInput.value.trim(),lng:myLngInput.value.trim(),activo:"SI"});if(!j.ok){toast("❌ "+(j.error||"falló"));return}toast("Ubicación guardada");await loadBase()}catch(err){toast("Sin conexión")}});
+document.querySelector("#posteSel").onchange=syncPosteForm;
+document.querySelector("#globBtn").onclick=e=>busyBtn(e.target,"Cargando…",loadGlob);
+document.querySelector("#waNumInput").value=localStorage.getItem("av_wa")||"";
+document.querySelector("#waBtn").onclick=()=>{let n=document.querySelector("#waNumInput").value.replace(/\D/g,"");if(!n){toast("Cargá el número del grupo");return}localStorage.setItem("av_wa",n);let last=S.alarms.find(a=>S.mine.includes(a.id))||S.alarms[0];let t="🚨 ALARMA VECINAL "+(last&&last.sim?"(SIMULACRO) ":"")+"%0A👤 "+encodeURIComponent(me().n)+"%0A📍 "+encodeURIComponent(me().d)+(myLatInput.value?"%0A📌 "+myLatInput.value+","+myLngInput.value:"");window.open("https://wa.me/"+n+"?text="+t,"_blank")};
+document.querySelector("#myPosteBtn").onclick=()=>{let v=SV.find(x=>String(x.id)===String(SES.vecino_id));if(!v){toast("Sin vecino asignado");return}let p=SP.find(x=>String(x.id_poste)===String(v.poste_id));if(!p||!p.lat||!p.lng){toast("Tu punto de alarma no tiene coordenadas");return}mkMap("myMapEl",p.lat,p.lng);let mm=M["myMapEl"];mm.map.setView([+p.lat,+p.lng],16);if(typeof L!=="undefined")L.popup().setLatLng([+p.lat,+p.lng]).setContent("🔊 <b>"+(p.nombre||p.id_poste)+"</b>").openOn(mm.map)};
+setInterval(()=>{if(S.sound&&SES&&(SES.rol==="centro"||SES.rol==="admin")&&S.alarms.some(a=>!a.done))beep()},9000);
+document.querySelector("#posteSaveBtn").onclick=e=>busyBtn(e.target,"Guardando…",async()=>{let id=document.querySelector("#posteSel").value;if(!id){toast("Elegí un punto de alarma");return}let p=SP.find(x=>String(x.id_poste)===String(id))||{};try{let j=await bPost({action:"upsertPoste",id_poste:id,nombre:p.nombre||id,direccion:p.direccion||"",esp_url:document.querySelector("#espUrlInput").value.trim()||p.esp_url||"",lat:posteLatInput.value.trim(),lng:posteLngInput.value.trim(),estado:p.estado||"activo"});if(!j.ok){toast("❌ "+(j.error||"falló"));return}toast("Coordenadas guardadas");await loadBase()}catch(err){toast("Sin conexión")}});
+}
+function syncPosteForm(){let id=document.querySelector("#posteSel").value;let p=SP.find(x=>String(x.id_poste)===String(id));if(!p){posteLatInput.value="";posteLngInput.value="";return}if(p.esp_url)document.querySelector("#espUrlInput").value=p.esp_url;posteLatInput.value=p.lat||"";posteLngInput.value=p.lng||"";mkMap("posteMapEl",p.lat,p.lng)}
+function renderMon(){
+let mm=mkMap("monMapEl",null,null);if(!mm||typeof L==="undefined")return;
+mm.map.eachLayer(l=>{if(l!==mm.marker&&l._url===undefined&&!(l instanceof L.TileLayer))mm.map.removeLayer(l)});
+drawAlarmMap(mm);
+}
+function renderVisMap(){
+if(typeof L==="undefined")return;
+let el=document.querySelector("#visMapEl");if(!el)return;
+let mm=mkMap("visMapEl",null,null);if(!mm)return;
+mm.map.eachLayer(l=>{if(l!==mm.marker&&l._url===undefined&&!(l instanceof L.TileLayer))mm.map.removeLayer(l)});
+drawAlarmMap(mm);
+}
+function drawAlarmMap(mm){
+if(JUR&&JUR.data&&JUR.show){try{L.geoJSON(JUR.data,{style:{color:"#38c6ff",weight:3,fillOpacity:.08},onEachFeature:(f,l)=>{if(f.properties&&f.properties.name)l.bindPopup("🚔 <b>"+f.properties.name+"</b>")}}).addTo(mm.map)}catch(e){}}
+SP.forEach(p=>{if(!p.lat||!p.lng)return;let n=SV.filter(v=>String(v.poste_id)===String(p.id_poste)&&String(v.activo)!=="NO").length;let act=S.alarms.some(a=>!a.done&&String(a.pid)===String(p.id_poste));L.marker([+p.lat,+p.lng],{icon:emojiIcon(act?"🚨":"🔊")}).addTo(mm.map).bindPopup("<b>"+(p.nombre||p.id_poste)+"</b><br>👥 "+n+" vecinos"+(act?"<br>🚨 ALARMA ACTIVA":""))});
+SV.forEach(v=>{if(!v.lat||!v.lng)return;let act=S.alarms.some(a=>!a.done&&(String(a.vid)===String(v.id)||(a.user===(v.nombre||""))));L.marker([+v.lat,+v.lng],{icon:emojiIcon("🏠")}).addTo(mm.map).bindPopup("<b>🏠 "+(v.nombre||"")+"</b><br>🔊 "+posteName(v.poste_id));if(act){let cv=L.circleMarker([+v.lat,+v.lng],{radius:22,color:"#ff4757",weight:4}).addTo(mm.map).bindPopup("<b>🚨 "+(v.nombre||"")+"</b>");try{cv.bringToFront()}catch(e){}}});
+S.alarms.filter(a=>!a.done&&a.lat&&a.lng).forEach(a=>{let cc=L.circleMarker([+a.lat,+a.lng],{radius:16,color:"#ff4757",weight:3,fillOpacity:.5}).addTo(mm.map).bindPopup("<b>"+a.kind+"</b><br>"+a.user+"<br>"+a.addr);try{cc.bringToFront()}catch(e){}});
+}
+function centerMon(lat,lng,label){let mm=mkMap("monMapEl",lat,lng);if(!mm||typeof L==="undefined")return;mm.map.setView([+lat,+lng],16);L.popup().setLatLng([+lat,+lng]).setContent("<b>"+(label||"Alarma")+"</b>").openOn(mm.map)}
+function focusAlarm(a){if(!a.lat||!a.lng)return;if(document.querySelector("#v-centro").hidden)return;let mm=M["monMapEl"];if(!mm)return;try{mm.map.flyTo([+a.lat,+a.lng],16,{duration:1.6});setTimeout(()=>{try{L.popup().setLatLng([+a.lat,+a.lng]).setContent("🚨 <b>"+a.kind+"</b><br>"+a.user+"<br>"+a.addr).openOn(mm.map)}catch(e){}},1700)}catch(e){}}
+function umbralMin(){return Math.max(1,parseInt(localStorage.getItem("av_umbral")||"5",10)||5)}
+function diagParse(p){let o={};String((p&&p.diag)||"").split("|").forEach(x=>{let i=x.indexOf(":");if(i>0)o[x.slice(0,i)]=x.slice(i+1)});return o}
+function haceMin(iso){let t=Date.parse(iso);if(isNaN(t))return -1;return Math.floor((Date.now()-t)/60000)}
+function puntoSalud(p){let est=String((p&&p.estado)||"activo");if(est==="inactivo")return{k:"baja",t:"⚫ Fuera de servicio"};if(est==="en_revision")return{k:"rev",t:"🔧 En revisión"};let m=haceMin(p?p.ultima_conexion:"");if(m<0)return{k:"nodata",t:"⚪ Sin datos"};let u=umbralMin();if(m>u)return{k:"caido",t:"🔴 Caído (hace "+m+" min)"};return{k:"ok",t:"🟢 En línea"}}
+let SALUD_PREV={},SALUD_INIT=false;
+function renderSalud(){
+let el=document.querySelector("#saludEl");if(!el)return;
+let ok=SP.filter(p=>puntoSalud(p).k==="ok").length;
+let ce=document.querySelector("#saludCountEl");if(ce)ce.textContent=SP.length?("("+ok+"/"+SP.length+" en línea)"):("");
+el.innerHTML=SP.length?SP.map(p=>{let s=puntoSalud(p),d=diagParse(p),m=haceMin(p.ultima_conexion);
+let info="<small>"+s.t+(m>=0?" · último latido hace "+m+" min":"")+(d.rssi?" · 📶 "+d.rssi+" dBm":"")+(d.up?" · ⏱ "+d.up+" min encendido":"")+(d.mot?" · mot: "+d.mot:"")+"</small>";
+let btns="<div class=\"row\" style=\"margin-top:6px\">"+(canOp()?"<button class=\"btn btn-ghost\" data-rep=\""+p.id_poste+"\">📝 Reportar</button>":"");
+if(SES&&SES.rol==="admin")btns+="<button class=\"btn btn-ghost\" data-rev=\""+p.id_poste+"\">"+(String(p.estado)==="en_revision"?"✅ Marcar reparado":"🔧 En revisión")+"</button>";
+return "<div class=\"alarm\">🔊 <b>"+(p.nombre||p.id_poste)+"</b><br>"+info+"<br>"+btns+"</div>"}).join(""):"<small>Sin puntos cargados. Cargalos en Carga → Puntos de alarma.</small>";
+el.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>busyBtn(b,"Reportando…",async()=>{let p=SP.find(x=>String(x.id_poste)===String(b.dataset.rep));if(!p)return;bLog("punto_reporte",SES.username,"Centro reporta "+(p.nombre||p.id_poste)+": "+puntoSalud(p).t,p.id_poste);toast("Reporte enviado al admin")}));
+el.querySelectorAll("[data-rev]").forEach(b=>b.onclick=()=>busyBtn(b,"Guardando…",async()=>{let p=SP.find(x=>String(x.id_poste)===String(b.dataset.rev));if(!p)return;let ne=String(p.estado)==="en_revision"?"activo":"en_revision";try{let j=await bPost({action:"upsertPoste",id_poste:p.id_poste,nombre:p.nombre||p.id_poste,direccion:p.direccion||"",esp_url:p.esp_url||"",lat:p.lat||"",lng:p.lng||"",estado:ne});if(!j.ok){toast("❌ "+(j.error||"falló"));return}bLog("punto_reporte",SES.username,(ne==="activo"?"Reparado ":"En revisión ")+(p.nombre||p.id_poste),p.id_poste);await loadBase()}catch(e){toast("Sin conexión")}}));
+}
+function checkSalud(){
+let changed=[];
+SP.forEach(p=>{let k=puntoSalud(p).k,id=String(p.id_poste);
+if(SALUD_INIT&&SALUD_PREV[id]&&SALUD_PREV[id]!==k&&(k==="caido"||SALUD_PREV[id]==="caido"))changed.push([p,k]);
+SALUD_PREV[id]=k});
+SALUD_INIT=true;
+changed.forEach(([p,k])=>{if(k==="caido"){beep();flashTitle();toast("🔴 Punto caído: "+(p.nombre||p.id_poste));bLog("punto_caido","sistema",(p.nombre||p.id_poste)+" sin latido",p.id_poste)}else{toast("✅ Punto recuperado: "+(p.nombre||p.id_poste));bLog("punto_reporte","sistema",(p.nombre||p.id_poste)+" volvió en línea",p.id_poste)}});
+}
+document.querySelector("#saludBtn").onclick=e=>busyBtn(e.target,"Actualizando…",async()=>{try{let j=await bGet("postes");if(!j.ok){toast("❌ "+(j.error||"falló"));return}SP=j.data||[];checkSalud();renderSalud();renderMon();toast("Salud actualizada")}catch(_){toast("Sin conexión")}});
+setInterval(async()=>{try{if(!SES)return;let r=SES.rol;if(r!=="centro"&&r!=="admin")return;if(document.querySelector("#v-centro").hidden)return;let j=await bGet("postes");if(j.ok){SP=j.data||[];fillPosteSels();checkSalud();renderSalud();renderMon()}}catch(e){}},60000);
+function renderVis(){
+let el=document.querySelector("#visAlarmsEl");if(!el)return;
+let act=S.alarms.filter(a=>!a.done);
+el.innerHTML=S.alarms.length?S.alarms.slice(0,20).map(a=>`<div class="alarm ${a.kind==="medica"?"med":a.kind==="policia"?"pol":"dis"} ${a.done?"ok":""}">${a.sim?"🧪 SIMULACRO ":""}<b>${a.kind==="disuadir"?"🔊 DISUADIR":a.kind==="medica"?"🚑 MÉDICA":"🚔 POLICÍA"}</b> ${a.done?(a.done==="retirada"?"↩️ retirada":"✅ atendida"):"🚨 ACTIVA"}<br>👤 ${a.user} — 📍 ${a.addr}<br><small>${new Date(a.ts).toLocaleString()}</small></div>`).join(""):"<small>Sin alarmas.</small>";
+renderVisMap();
+}
+async function loadStats(){
+let el=document.querySelector("#statsEl");el.innerHTML="<small>⏳ Cargando…</small>";
+try{
+let j=await bGet("auditoria");if(!j.ok){el.innerHTML="<small>❌ "+(j.error||"falló")+"</small>";return}
+let d=j.data||[];
+let byType={},byDay={};
+d.forEach(e=>{byType[e.tipo_evento||"?"]=(byType[e.tipo_evento||"?"]||0)+1;let day=String(e.timestamp||"").slice(0,10);if(day)byDay[day]=(byDay[day]||0)+1});
+let tot=d.length,mx=Math.max(1,...Object.values(byType));
+let h="<div><small>Total eventos: <b>"+tot+"</b> · Vecinos: <b>"+SV.length+"</b> · Puntos de alarma: <b>"+SP.length+"</b> · Alarmas activas: <b>"+S.alarms.filter(a=>!a.done).length+"</b></small></div>";
+h+="<b>Por tipo</b>"+Object.keys(byType).sort().map(k=>`<div><small>${k}: ${byType[k]}</small><div class="bar"><i style="width:${Math.round(byType[k]/mx*100)}%"></i></div></div>`).join("");
+let days=Object.keys(byDay).sort().slice(-7);
+if(days.length){let m2=Math.max(1,...days.map(k=>byDay[k]));h+="<b>Últimos días</b>"+days.map(k=>`<div><small>${k}: ${byDay[k]}</small><div class="bar"><i style="width:${Math.round(byDay[k]/m2*100)}%"></i></div></div>`).join("")}
+el.innerHTML=h||"<small>Sin datos.</small>";
+}catch(e){el.innerHTML="<small>❌ Sin conexión</small>"}
+}
+document.querySelector("#statsBtn").onclick=e=>busyBtn(e.target,"Actualizando…",loadStats);
+let JUR={data:null,show:true};
+async function loadJur(){try{let r=await fetch("src/jurisdicciones.geojson");JUR.data=await r.json();renderMon();renderVisMap()}catch(e){}}
+function installInit(){try{document.title="GEOALERTA SISTEMAS CATAMARCA | Punto de Alarma Vecinal";let at=document.createElement("link");at.rel="apple-touch-icon";at.href="src/icon-192.png";document.head.appendChild(at)}catch(e){}
+try{let mc=document.createElement("meta");mc.name="theme-color";mc.content="#081120";document.head.appendChild(mc);let mm=document.createElement("meta");mm.name="mobile-web-app-capable";mm.content="yes";document.head.appendChild(mm);let ma=document.createElement("meta");ma.name="apple-mobile-web-app-capable";ma.content="yes";document.head.appendChild(ma);let mani={name:"GeoAlerta Sistemas Catamarca",short_name:"GeoAlerta",start_url:"https://perchance.org/"+window.generatorName,display:"standalone",orientation:"portrait",background_color:"#081120",theme_color:"#081120",icons:[{src:location.origin+"/src/icon-192.png",sizes:"192x192",type:"image/png"},{src:location.origin+"/src/icon-512.png",sizes:"512x512",type:"image/png"}]};let ml=document.createElement("link");ml.rel="manifest";ml.href=URL.createObjectURL(new Blob([JSON.stringify(mani)],{type:"application/json"}));document.head.appendChild(ml)}catch(e){}try{if(localStorage.getItem("av_noinstall"))return;if((window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone)return;let c=document.querySelector("#installCard"),t=document.querySelector("#installTxt");if(!c||!t)return;let ua=navigator.userAgent||"";if(/iPhone|iPad|iPod/i.test(ua))t.textContent="iPhone: tocá Compartir y después «Agregar a pantalla de inicio». Queda el icono junto a tus apps y abre directo.";else t.textContent="Android: tocá el menú de Chrome y elegí «Agregar a pantalla principal» (o «Instalar app»). Queda el icono junto a tus apps y abre directo.";c.hidden=false;document.querySelector("#installOkBtn").onclick=()=>{try{localStorage.setItem("av_noinstall","1")}catch(e){}c.hidden=true}}catch(e){}}
+function jurInit(){let a=document.querySelector("#jurTgl"),b=document.querySelector("#jurTgl2");if(a)a.onchange=()=>{JUR.show=a.checked;if(b)b.checked=a.checked;renderMon();renderVisMap()};if(b)b.onchange=()=>{JUR.show=b.checked;if(a)a.checked=b.checked;renderMon();renderVisMap()};loadJur()}
+let statBusy=false;
+async function autoStats(){if(statBusy)return;if(document.querySelector("#v-vis").hidden)return;statBusy=true;try{await loadStats()}catch(e){}statBusy=false}
+setInterval(autoStats,45000);
+renderVec();renderAlarms();renderVis();bInit();loginInit();cargaInit();jurInit();installInit();loadTipos();connect();
+</script>
+<script>try{var l=document.createElement("link");l.rel="icon";l.href="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="24" fill="#0d1b33"/><g transform="translate(60,60) rotate(35) translate(-45,-45)"><path d="M 15 75 A 60 60 0 0 1 75 15" fill="none" stroke="#eef4ff" stroke-width="14" stroke-linecap="round"/><path d="M 40 75 A 35 35 0 0 1 75 40" fill="none" stroke="#38c6ff" stroke-width="14" stroke-linecap="round"/><path d="M 65 75 A 10 10 0 0 1 75 65" fill="none" stroke="#ff4757" stroke-width="12" stroke-linecap="round"/></g></svg>');document.head.appendChild(l);}catch(e){}</script>
+
+

@@ -1,0 +1,15 @@
+// Alarma vecinal
+createServerSocket = {import:server-plugin}
+favicon = {import:favicon-plugin}
+
+$meta
+  title = GEOALERTA SISTEMAS CATAMARCA | Punto de Alarma Vecinal
+  description = Catamarca · Punto de alarma vecinal: botón SOS con GPS, sirena del punto de alarma y monitoreo en vivo para el barrio.
+  image = https://user.uploads.dev/file/e3e767c65adf74a0bc9df3daaf56c92d.png
+
+title
+  Alarma Vecinal
+
+$output = [title]
+
+
