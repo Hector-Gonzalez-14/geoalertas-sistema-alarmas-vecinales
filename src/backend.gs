@@ -94,7 +94,7 @@ function _limpiaSesiones() {
 function _nuevaSesion(u) {
   _limpiaSesiones();
   var tok = Utilities.getUuid() + Utilities.getUuid();
-  _sheet(HOJAS.sesiones).appendRow([_sha256hex(tok), u.username, u.rol, u.vecino_id || "", u.poste_id || "", new Date(Date.now() + 24 * 3600 * 1000).toISOString(), new Date().toISOString()]);
+  _sheet(HOJAS.sesiones).appendRow([_sha256hex(tok), u.username, u.rol, u.vecino_id || "", u.poste_id || "", new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(), new Date().toISOString()]);
   return tok;
 }
 function _actorToken(t) {
